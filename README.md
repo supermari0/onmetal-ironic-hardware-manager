@@ -6,8 +6,6 @@ Agent](https://github.com/openstack/ironic-python-agent) to add the
 functionality necessary for the agent to handle unusual hardware in OnMetal
 flavors.
 
-## Notes:
-
-1. This module requires that `ddcli` be present on `PATH`
-2. For some reason related to the `ironic-python-agent` dependency, tests will
-   only pass if you run `tox` with the `-r` option.
+**Note:** This module requires that
+[ddcli](http://www.lsi.com/downloads/Public/Nytro/downloads/Nytro%20WarpDrive/Firmware/12.00.00.00/ddmfgcli_12.00.00.00_All_OS.zip)
+version 112.00.01.00 be present on `PATH`.
