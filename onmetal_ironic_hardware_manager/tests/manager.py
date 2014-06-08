@@ -2,6 +2,7 @@ import mock
 import os
 import six
 
+from ironic_python_agent import errors
 from ironic_python_agent import hardware
 from ironic_python_agent import utils
 from oslotest import base as test_base
@@ -55,6 +56,12 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
         super(TestOnMetalHardwareManager, self).setUp()
         self.hardware = onmetal_hardware_manager.OnMetalHardwareManager()
 
+    def _mock_file(self, mocked_open, contents):
+        mocked_open.return_value.__enter__ = lambda s: s
+        mocked_open.return_value.__exit__ = mock.Mock()
+        read_mock = mocked_open.return_value.read
+        read_mock.return_value = contents
+
     @mock.patch.object(os.path, 'realpath')
     @mock.patch.object(utils, 'execute')
     @mock.patch(OPEN_FUNCTION_NAME)
@@ -65,10 +72,7 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
         block_device = hardware.BlockDevice('/dev/sda', 1073741824)
 
         # Mock out the model detection
-        mocked_open.return_value.__enter__ = lambda s: s
-        mocked_open.return_value.__exit__ = mock.Mock()
-        read_mock = mocked_open.return_value.read
-        read_mock.return_value = 'NWD-BLP4-1600\n'
+        self._mock_file(mocked_open, 'NWD-BLP4-1600\n')
 
         # Mock the PCI address lookup
         mocked_realpath.return_value = ('/sys/devices/pci0000:00/0000:00:02.0'
@@ -79,3 +83,90 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
             (DDCLI_FORMAT_OUT, ''),
         ]
         self.hardware.erase_block_device(block_device)
+
+    @mock.patch.object(os.path, 'realpath')
+    @mock.patch.object(utils, 'execute')
+    @mock.patch(OPEN_FUNCTION_NAME)
+    def test_erase_block_device_lsi_notfound(self,
+                                             mocked_open,
+                                             mocked_execute,
+                                             mocked_realpath):
+        block_device = hardware.BlockDevice('/dev/sda', 1073741824)
+        self._mock_file(mocked_open, 'NWD-BLP4-1600\n')
+
+        # The '0000:06:00.0' does not map to an address in the ddcli output
+        mocked_realpath.return_value = ('/sys/devices/pci0000:00/0000:00:02.0'
+            '/0000:06:00.0/host3/target3:1:0/3:1:0:0/block/sdb')
+
+        mocked_execute.side_effect = [
+            (DDCLI_LISTALL_OUT, ''),
+        ]
+
+        self.assertRaises(errors.BlockDeviceEraseError,
+                          self.hardware.erase_block_device,
+                          block_device)
+
+    @mock.patch.object(os.path, 'realpath')
+    @mock.patch.object(utils, 'execute')
+    @mock.patch(OPEN_FUNCTION_NAME)
+    def test_erase_block_device_lsi_multiple(self,
+                                             mocked_open,
+                                             mocked_execute,
+                                             mocked_realpath):
+        block_device = hardware.BlockDevice('/dev/sda', 1073741824)
+        self._mock_file(mocked_open, 'NWD-BLP4-1600\n')
+        mocked_realpath.return_value = ('/sys/devices/pci0000:00/0000:00:02.0'
+            '/0000:02:00.0/host3/target3:1:0/3:1:0:0/block/sdb')
+
+        # Perhaps ddcli returns the same address twice for some reason
+        duplicate_output = DDCLI_LISTALL_OUT.replace('00:04:00:00',
+                                                     '00:02:00:00')
+
+        mocked_execute.side_effect = [
+            (duplicate_output, ''),
+        ]
+
+        self.assertRaises(errors.BlockDeviceEraseError,
+                          self.hardware.erase_block_device,
+                          block_device)
+
+    @mock.patch.object(os.path, 'realpath')
+    @mock.patch.object(utils, 'execute')
+    @mock.patch(OPEN_FUNCTION_NAME)
+    def test_erase_block_device_lsi_error(self,
+                                          mocked_open,
+                                          mocked_execute,
+                                          mocked_realpath):
+        block_device = hardware.BlockDevice('/dev/sda', 1073741824)
+        self._mock_file(mocked_open, 'NWD-BLP4-1600\n')
+        mocked_realpath.return_value = ('/sys/devices/pci0000:00/0000:00:02.0'
+            '/0000:02:00.0/host3/target3:1:0/3:1:0:0/block/sdb')
+
+        # Presumably it doesn't print success on an error
+        error_output = DDCLI_LISTALL_OUT.replace(
+            'WarpDrive format successfully completed.',
+            'Something went terribly, terribly wrong.')
+
+        mocked_execute.side_effect = [
+            (DDCLI_LISTALL_OUT, ''),
+            (error_output, ''),
+        ]
+
+        self.assertRaises(errors.BlockDeviceEraseError,
+                          self.hardware.erase_block_device,
+                          block_device)
+
+    @mock.patch('ironic_python_agent.hardware.GenericHardwareManager'
+                '.erase_block_device')
+    @mock.patch.object(os.path, 'realpath')
+    @mock.patch.object(utils, 'execute')
+    @mock.patch(OPEN_FUNCTION_NAME)
+    def test_erase_block_device_defer_to_generic(self,
+                                                 mocked_open,
+                                                 mocked_execute,
+                                                 mocked_realpath,
+                                                 mocked_generic_erase):
+        self._mock_file(mocked_open, 'Some Other Thing\n')
+        block_device = hardware.BlockDevice('/dev/sda', 1073741824)
+        self.hardware.erase_block_device(block_device)
+        mocked_generic_erase.assert_called_once_with(block_device)
