@@ -1,2 +1,2 @@
-teeth-ironic-hardware-manager
-=============================
+onmetal-ironic-hardware-manager
+===============================

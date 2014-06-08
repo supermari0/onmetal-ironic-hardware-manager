@@ -1,0 +1,16 @@
+*.py[co]
+src/*
+build/*
+AUTHORS
+ChangeLog
+*.egg-info
+*.egg
+.tox/*
+devenv/*
+.coverage
+coverage.xml
+.testrepository
+imagebuild/coreos/build
+imagebuild/coreos/dist
+imagebuild/coreos/oem/authorized_keys
+imagebuild/coreos/UPLOAD
