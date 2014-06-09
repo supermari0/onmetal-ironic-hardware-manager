@@ -98,6 +98,11 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
         ]
         self.hardware.erase_block_device(block_device)
 
+        mocked_execute.assert_has_calls([
+            mock.call('ddcli', '-listall'),
+            mock.call('ddcli', '-c', '1', '-format', '-s'),
+        ])
+
     @mock.patch.object(os.path, 'realpath')
     @mock.patch.object(utils, 'execute')
     @mock.patch(OPEN_FUNCTION_NAME)
@@ -119,6 +124,10 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
         self.assertRaises(errors.BlockDeviceEraseError,
                           self.hardware.erase_block_device,
                           block_device)
+
+        mocked_execute.assert_has_calls([
+            mock.call('ddcli', '-listall'),
+        ])
 
     @mock.patch.object(os.path, 'realpath')
     @mock.patch.object(utils, 'execute')
@@ -143,6 +152,10 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
         self.assertRaises(errors.BlockDeviceEraseError,
                           self.hardware.erase_block_device,
                           block_device)
+
+        mocked_execute.assert_has_calls([
+            mock.call('ddcli', '-listall'),
+        ])
 
     @mock.patch.object(os.path, 'realpath')
     @mock.patch.object(utils, 'execute')
@@ -170,6 +183,11 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
                           self.hardware.erase_block_device,
                           block_device)
 
+        mocked_execute.assert_has_calls([
+            mock.call('ddcli', '-listall'),
+            mock.call('ddcli', '-c', '1', '-format', '-s'),
+        ])
+
     @mock.patch('ironic_python_agent.hardware.GenericHardwareManager'
                 '.erase_block_device')
     @mock.patch.object(os.path, 'realpath')
@@ -184,3 +202,4 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
         block_device = hardware.BlockDevice('/dev/sda', 1073741824)
         self.hardware.erase_block_device(block_device)
         mocked_generic_erase.assert_called_once_with(block_device)
+        mocked_execute.assert_has_calls([])
