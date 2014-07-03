@@ -50,30 +50,48 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
         """
         return [
             {
+                'state': 'decom_bios_settings',
+                'function': 'decom_bios_settings',
+                'priority': 10,
+                'reboot_requested': True,
+            },
+            {
                 'state': 'update_bios',
                 'function': 'update_bios',
-                'priority': 10,
+                'priority': 20,
                 'reboot_requested': True,
             },
             {
                 'state': 'update_warpdrive_firmware',
                 'function': 'update_warpdrive_firmware',
-                'priority': 20,
+                'priority': 30,
                 'reboot_requested': True,
             },
             {
                 'state': 'update_intel_nic_firmware',
                 'function': 'update_intel_nic_firmware',
-                'priority': 21,
+                'priority': 31,
                 'reboot_requested': True,
             },
             {
                 'state': 'erase_hardware',
                 'function': 'erase_hardware',
-                'priority': 30,
+                'priority': 40,
                 'reboot_requested': True,
             },
+            # {
+            #     'state': 'customer_bios_settings',
+            #     'function': 'customer_bios_settings',
+            #     'priority': 100,
+            #     'reboot_requested': True,
+            # },
         ]
+
+    def decom_bios_settings(self, driver_info):
+        LOG.info('Decom BIOS Settings called with %s' % driver_info)
+
+    def customer_bios_settings(self, driver_info):
+        LOG.info('Csutomer BIOS Settings called with %s' % driver_info)
 
     def update_bios(self, driver_info):
         LOG.info('Update BIOS called with %s' % driver_info)
