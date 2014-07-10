@@ -53,7 +53,7 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
         return [
             {
                 'state': 'upgrade_bios',
-                'function': 'update_bios',
+                'function': 'upgrade_bios',
                 'priority': 20,
                 'reboot_requested': True,
             },
@@ -83,7 +83,7 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
             },
             {
                 'state': 'customer_bios_settings',
-                'function': 'decom_bios_settings',
+                'function': 'customer_bios_settings',
                 'priority': 10,
                 'reboot_requested': True,
             },
@@ -95,7 +95,7 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
     def customer_bios_settings(self, driver_info):
         LOG.info('Customer BIOS Settings called with %s' % driver_info)
 
-    def update_bios(self, driver_info):
+    def upgrade_bios(self, driver_info):
         LOG.info('Update BIOS called with %s' % driver_info)
 
     def update_warpdrive_firmware(self, driver_info):
