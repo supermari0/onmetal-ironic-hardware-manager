@@ -16,9 +16,13 @@ import os
 
 from ironic_python_agent import errors
 from ironic_python_agent import hardware
+from ironic_python_agent.openstack.common import log
 from ironic_python_agent import utils
 
 DDCLI = '/mnt/bin/ddcli'
+
+
+LOG = log.getLogger()
 
 
 class OnMetalHardwareManager(hardware.GenericHardwareManager):
@@ -30,6 +34,75 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
             return
 
         super(OnMetalHardwareManager, self).erase_block_device(block_device)
+
+    def get_decommission_steps(self):
+        """Get a list of decommission steps with priority
+
+        Returns a list of dicts of the following form:
+        {'function': the HardwareManager function to call.
+         'priority': the order to call, starting at 1. If two steps share
+                    the same priority, their order is undefined.
+         'reboot_requested': Whether the agent should request Ironic reboots
+                             it after the operation completes.
+         'state': The state the machine will be in when the operation
+                  completes. This will match the decommission_target_state
+                  saved in the Ironic node.
+        :return: a default list of decommission steps, as a list of
+        dictionaries
+        """
+        return [
+            {
+                'state': 'upgrade_bios',
+                'function': 'upgrade_bios',
+                'priority': 10,
+                'reboot_requested': True,
+            },
+            {
+                'state': 'decom_bios_settings',
+                'function': 'decom_bios_settings',
+                'priority': 20,
+                'reboot_requested': True,
+            },
+            {
+                'state': 'update_warpdrive_firmware',
+                'function': 'update_warpdrive_firmware',
+                'priority': 30,
+                'reboot_requested': True,
+            },
+            {
+                'state': 'update_intel_nic_firmware',
+                'function': 'update_intel_nic_firmware',
+                'priority': 31,
+                'reboot_requested': True,
+            },
+            {
+                'state': 'erase_hardware',
+                'function': 'erase_hardware',
+                'priority': 40,
+                'reboot_requested': False,
+            },
+            {
+                'state': 'customer_bios_settings',
+                'function': 'customer_bios_settings',
+                'priority': 50,
+                'reboot_requested': True,
+            },
+        ]
+
+    def decom_bios_settings(self, driver_info):
+        LOG.info('Decom BIOS Settings called with %s' % driver_info)
+
+    def customer_bios_settings(self, driver_info):
+        LOG.info('Customer BIOS Settings called with %s' % driver_info)
+
+    def upgrade_bios(self, driver_info):
+        LOG.info('Update BIOS called with %s' % driver_info)
+
+    def update_warpdrive_firmware(self, driver_info):
+        LOG.info('Update Warpdrive called with %s' % driver_info)
+
+    def update_intel_nic_firmware(self, driver_info):
+        LOG.info('Update Intel NIC called with %s' % driver_info)
 
     def _erase_lsi_warpdrive(self, block_device):
         device_name = os.path.basename(block_device.name)
