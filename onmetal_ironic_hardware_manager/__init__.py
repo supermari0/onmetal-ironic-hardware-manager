@@ -19,6 +19,8 @@ from ironic_python_agent import hardware
 from ironic_python_agent.openstack.common import log
 from ironic_python_agent import utils
 
+DDCLI = '/mnt/bin/ddcli'
+
 
 LOG = log.getLogger()
 
@@ -129,7 +131,7 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
         # pull out a segment such as 0000:02:00.0 and trim it to 00:02:00
         pci_address = real_path.split('/')[5][2:-2]
 
-        lines = utils.execute('ddcli', '-listall')[0].split('\n')
+        lines = utils.execute(DDCLI, '-listall')[0].split('\n')
 
         matching_lines = [line for line in lines if 'NWD-BLP4-1600' in line and
                           pci_address in line]
@@ -146,7 +148,7 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
 
         line = matching_lines[0]
         controller_id = line.split()[0]
-        result = utils.execute('ddcli', '-c', controller_id, '-format', '-s')
+        result = utils.execute(DDCLI, '-c', controller_id, '-format', '-s')
         if 'WarpDrive format successfully completed.' not in result[0]:
             raise errors.BlockDeviceEraseError(('Erasing LSI card failed: '
                 '{0}').format(result[0]))
