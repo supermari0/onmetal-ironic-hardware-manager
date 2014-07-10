@@ -8,4 +8,4 @@ flavors.
 
 **Note:** This module requires that
 [ddcli](http://www.lsi.com/downloads/Public/Nytro/downloads/Nytro%20WarpDrive/Firmware/12.00.00.00/ddmfgcli_12.00.00.00_All_OS.zip)
-version 112.00.01.00 be present on `PATH`.
+version 112.00.01.00 be present in /mnt/bin/.
