@@ -52,13 +52,13 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
             {
                 'state': 'upgrade_bios',
                 'function': 'upgrade_bios',
-                'priority': 20,
+                'priority': 10,
                 'reboot_requested': True,
             },
             {
                 'state': 'decom_bios_settings',
                 'function': 'decom_bios_settings',
-                'priority': 10,
+                'priority': 20,
                 'reboot_requested': True,
             },
             {
@@ -82,7 +82,7 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
             {
                 'state': 'customer_bios_settings',
                 'function': 'customer_bios_settings',
-                'priority': 10,
+                'priority': 50,
                 'reboot_requested': True,
             },
         ]
