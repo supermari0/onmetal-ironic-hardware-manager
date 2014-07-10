@@ -77,7 +77,7 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
                 'state': 'erase_hardware',
                 'function': 'erase_hardware',
                 'priority': 40,
-                'reboot_requested': True,
+                'reboot_requested': False,
             },
             {
                 'state': 'customer_bios_settings',
