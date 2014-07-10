@@ -79,19 +79,13 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
                 'priority': 40,
                 'reboot_requested': True,
             },
-            # {
-            #     'state': 'customer_bios_settings',
-            #     'function': 'customer_bios_settings',
-            #     'priority': 100,
-            #     'reboot_requested': True,
-            # },
         ]
 
     def decom_bios_settings(self, driver_info):
         LOG.info('Decom BIOS Settings called with %s' % driver_info)
 
     def customer_bios_settings(self, driver_info):
-        LOG.info('Csutomer BIOS Settings called with %s' % driver_info)
+        LOG.info('Customer BIOS Settings called with %s' % driver_info)
 
     def update_bios(self, driver_info):
         LOG.info('Update BIOS called with %s' % driver_info)
