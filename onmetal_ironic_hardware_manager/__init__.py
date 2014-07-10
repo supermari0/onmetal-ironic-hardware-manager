@@ -52,15 +52,15 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
         """
         return [
             {
-                'state': 'decom_bios_settings',
-                'function': 'decom_bios_settings',
-                'priority': 10,
+                'state': 'upgrade_bios',
+                'function': 'update_bios',
+                'priority': 20,
                 'reboot_requested': True,
             },
             {
-                'state': 'update_bios',
-                'function': 'update_bios',
-                'priority': 20,
+                'state': 'decom_bios_settings',
+                'function': 'decom_bios_settings',
+                'priority': 10,
                 'reboot_requested': True,
             },
             {
@@ -79,6 +79,12 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
                 'state': 'erase_hardware',
                 'function': 'erase_hardware',
                 'priority': 40,
+                'reboot_requested': True,
+            },
+            {
+                'state': 'customer_bios_settings',
+                'function': 'decom_bios_settings',
+                'priority': 10,
                 'reboot_requested': True,
             },
         ]
