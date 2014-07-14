@@ -79,7 +79,7 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
             },
             {
                 'state': 'erase_devices',
-                'function': 'erase_device',
+                'function': 'erase_devices',
                 'priority': 40,
                 'reboot_requested': False,
             },
