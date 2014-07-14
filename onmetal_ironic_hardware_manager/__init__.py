@@ -26,6 +26,8 @@ LOG = log.getLogger()
 
 
 class OnMetalHardwareManager(hardware.GenericHardwareManager):
+    HARDWARE_MANAGER_VERSION = 1
+
     def evaluate_hardware_support(cls):
         return hardware.HardwareSupport.SERVICE_PROVIDER
 
@@ -76,8 +78,8 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
                 'reboot_requested': True,
             },
             {
-                'state': 'erase_hardware',
-                'function': 'erase_hardware',
+                'state': 'erase_devices',
+                'function': 'erase_devices',
                 'priority': 40,
                 'reboot_requested': False,
             },
