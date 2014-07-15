@@ -1,4 +1,3 @@
-w
 # Copyright 2014 Rackspace, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -100,7 +99,10 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
         return True
 
     def customer_bios_settings(self, driver_info):
-        LOG.info('NOOP: Customer BIOS Settings called with %s' % driver_info)
+        LOG.info('Customer BIOS Settings called with %s' % driver_info)
+        cmd = os.path.join(BIOS_DIR, 'write_bios_settings_customer.sh')
+        utils.execute(cmd, check_exit_code=[0])[0]
+        return True
 
     def upgrade_bios(self, driver_info):
         LOG.info('Update BIOS called with %s' % driver_info)
