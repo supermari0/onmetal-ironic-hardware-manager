@@ -1,3 +1,4 @@
+w
 # Copyright 2014 Rackspace, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -95,7 +96,7 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
     def decom_bios_settings(self, driver_info):
         LOG.info('Decom BIOS Settings called with %s' % driver_info)
         cmd = os.path.join(BIOS_DIR, 'write_bios_settings_decom.sh')
-        bios_settings = utils.execute(cmd, check_exit_code=[0])[0]
+        utils.execute(cmd, check_exit_code=[0])[0]
         return True
 
     def customer_bios_settings(self, driver_info):
@@ -104,7 +105,7 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
     def upgrade_bios(self, driver_info):
         LOG.info('Update BIOS called with %s' % driver_info)
         cmd = os.path.join(BIOS_DIR, 'flash_bios.sh')
-        bios_update = utils.execute(cmd, check_exit_code=[0])[0]
+        utils.execute(cmd, check_exit_code=[0])[0]
         return True
 
     def update_warpdrive_firmware(self, driver_info):
