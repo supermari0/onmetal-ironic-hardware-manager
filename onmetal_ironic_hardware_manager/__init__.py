@@ -26,7 +26,7 @@ LOG = log.getLogger()
 
 
 class OnMetalHardwareManager(hardware.GenericHardwareManager):
-    HARDWARE_MANAGER_VERSION = 1
+    HARDWARE_MANAGER_VERSION = "1"
 
     def evaluate_hardware_support(cls):
         return hardware.HardwareSupport.SERVICE_PROVIDER
