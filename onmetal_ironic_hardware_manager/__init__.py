@@ -95,16 +95,16 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
         LOG.info('Decom BIOS Settings called with %s' % driver_info)
 
     def customer_bios_settings(self, driver_info):
-        LOG.info('Customer BIOS Settings called with %s' % driver_info)
+        LOG.info('NOOP: Customer BIOS Settings called with %s' % driver_info)
 
     def upgrade_bios(self, driver_info):
         LOG.info('Update BIOS called with %s' % driver_info)
 
     def update_warpdrive_firmware(self, driver_info):
-        LOG.info('Update Warpdrive called with %s' % driver_info)
+        LOG.info('NOOP: Update Warpdrive called with %s' % driver_info)
 
     def update_intel_nic_firmware(self, driver_info):
-        LOG.info('Update Intel NIC called with %s' % driver_info)
+        LOG.info('NOOP: Update Intel NIC called with %s' % driver_info)
 
     def _erase_lsi_warpdrive(self, block_device):
         device_name = os.path.basename(block_device.name)
