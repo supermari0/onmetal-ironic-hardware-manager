@@ -101,7 +101,7 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
         mocked_execute.assert_has_calls([
             mock.call(onmetal_hardware_manager.DDCLI, '-listall'),
             mock.call(onmetal_hardware_manager.DDCLI,
-                '-c', '1', '-format', '-s'),
+                '-c', '1', '-format', '-op', '-level', 'cap', '-s'),
         ])
 
     @mock.patch.object(os.path, 'realpath')
@@ -187,7 +187,7 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
         mocked_execute.assert_has_calls([
             mock.call(onmetal_hardware_manager.DDCLI, '-listall'),
             mock.call(onmetal_hardware_manager.DDCLI,
-                '-c', '1', '-format', '-s'),
+                '-c', '1', '-format', '-op', '-level', 'cap', '-s'),
         ])
 
     @mock.patch('ironic_python_agent.hardware.GenericHardwareManager'
