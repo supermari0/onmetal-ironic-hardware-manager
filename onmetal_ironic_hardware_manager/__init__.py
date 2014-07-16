@@ -150,7 +150,8 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
 
         line = matching_lines[0]
         controller_id = line.split()[0]
-        result = utils.execute(DDCLI, '-c', controller_id, '-format', '-s')
+        result = utils.execute(DDCLI, '-c', controller_id, '-format', '-op',
+                '-level', 'cap', '-s')
         if 'WarpDrive format successfully completed.' not in result[0]:
             raise errors.BlockDeviceEraseError(('Erasing LSI card failed: '
                 '{0}').format(result[0]))
