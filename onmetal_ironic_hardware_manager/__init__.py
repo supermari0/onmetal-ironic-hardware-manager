@@ -22,6 +22,7 @@ from ironic_python_agent import utils
 DDCLI = '/mnt/bin/ddcli'
 # Directory that all BIOS utilities are located in
 BIOS_DIR = '/mnt/bios/quanta_A14'
+LSI_MODEL = 'NWD-BLP4-1600'
 
 LOG = log.getLogger()
 
@@ -116,18 +117,26 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
     def update_intel_nic_firmware(self, driver_info):
         LOG.info('NOOP: Update Intel NIC called with %s' % driver_info)
 
+    def _list_lsi_devices(self):
+        lines = utils.execute(DDCLI, '-listall')[0].split('\n')
+        matching_devices = [line.split() for line in lines if LSI_MODEL
+                            in line]
+        devices = []
+        for line in matching_devices:
+            devices.append({
+                'id': line[0].strip(),
+                'model': line[1].strip(),
+                'version': line[2].strip(),
+                # Strip the last :00 to match the /sys/devices filename
+                'pci_address': line[3].strip()[:-3]
+            })
+        return devices
+
     def _erase_lsi_warpdrive(self, block_device):
+        if block_device.model != LSI_MODEL:
+            return False
         device_name = os.path.basename(block_device.name)
         sys_block_path = '{0}/block/{1}'.format(self.sys_path, device_name)
-        model_path = '{0}/device/model'.format(sys_block_path)
-
-        try:
-            with open(model_path) as model_file:
-                model_str = model_file.read().strip()
-                if not model_str == 'NWD-BLP4-1600':
-                    return False
-        except Exception:
-            return False
 
         # NOTE(russell_h): Trying to map a block device name to an LSI card
         # gets a little weird. It seems like if we follow the /sys/block/<name>
@@ -143,24 +152,23 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
         # pull out a segment such as 0000:02:00.0 and trim it to 00:02:00
         pci_address = real_path.split('/')[5][2:-2]
 
-        lines = utils.execute(DDCLI, '-listall')[0].split('\n')
+        devices = self._list_lsi_devices()
 
-        matching_lines = [line for line in lines if 'NWD-BLP4-1600' in line and
-                          pci_address in line]
+        matching_devices = [device for device in devices if
+                            device['pci_address'] == pci_address]
 
-        if len(matching_lines) == 0:
+        if len(matching_devices) == 0:
             raise errors.BlockDeviceEraseError(('Unable to locate an LSI card '
                 'with a PCI Address matching {0} for block device {1}').format(
                     pci_address, block_device.name))
 
-        if len(matching_lines) > 1:
+        if len(matching_devices) > 1:
             raise errors.BlockDeviceEraseError(('Found multiple LSI cards '
                 'with a PCI Address matching {0} for block device {1}').format(
                     pci_address, block_device.name))
 
-        line = matching_lines[0]
-        controller_id = line.split()[0]
-        result = utils.execute(DDCLI, '-c', controller_id, '-format', '-op',
+        device = matching_devices[0]
+        result = utils.execute(DDCLI, '-c', device['id'], '-format', '-op',
                 '-level', 'cap', '-s')
         if 'WarpDrive format successfully completed.' not in result[0]:
             raise errors.BlockDeviceEraseError(('Erasing LSI card failed: '
