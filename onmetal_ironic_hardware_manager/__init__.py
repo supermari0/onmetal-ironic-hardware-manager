@@ -19,10 +19,14 @@ from ironic_python_agent import hardware
 from ironic_python_agent.openstack.common import log
 from ironic_python_agent import utils
 
-DDCLI = '/mnt/bin/ddcli'
+
 # Directory that all BIOS utilities are located in
 BIOS_DIR = '/mnt/bios/quanta_A14'
 LSI_MODEL = 'NWD-BLP4-1600'
+# Directory that all the LSI utilities/firmware are located in
+LSI_FIRMWARE_VERSION = '11.00.00.00'
+LSI_WARPDRIVE_DIR = os.path.join('/mnt/LSI', LSI_FIRMWARE_VERSION)
+DDCLI = os.path.join(LSI_WARPDRIVE_DIR, 'ddcli')
 
 LOG = log.getLogger()
 
@@ -71,7 +75,7 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
                 'state': 'update_warpdrive_firmware',
                 'function': 'update_warpdrive_firmware',
                 'priority': 30,
-                'reboot_requested': True,
+                'reboot_requested': False,
             },
             {
                 'state': 'update_intel_nic_firmware',
@@ -112,7 +116,25 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
         return True
 
     def update_warpdrive_firmware(self, driver_info):
-        LOG.info('NOOP: Update Warpdrive called with %s' % driver_info)
+        LOG.info('Update Warpdrive called with %s' % driver_info)
+        devices = self._list_lsi_devices()
+        for device in devices:
+            # Don't reflash the same firmware
+            if device['version'] != LSI_FIRMWARE_VERSION:
+                filename = '%(model)s_%(version)s.bin' % {
+                    'model': device['model'],
+                    'version': LSI_FIRMWARE_VERSION
+                }
+                firmware_path = os.path.join(LSI_WARPDRIVE_DIR,
+                                             filename)
+                cmd = [DDCLI, '-c', device['id'], '-updatepkg', firmware_path]
+                utils.execute(*cmd, check_exit_code=[0])
+            else:
+                LOG.info('Device %(id)s already version %(version)s, '
+                         'not upgrading.' % {
+                             'id': device['id'],
+                             'version': device['version']
+                         })
 
     def update_intel_nic_firmware(self, driver_info):
         LOG.info('NOOP: Update Intel NIC called with %s' % driver_info)
