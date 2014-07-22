@@ -197,3 +197,29 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
         self.hardware.erase_block_device(self.block_device)
         mocked_execute.assert_has_calls([])
         mocked_generic.assert_has_calls([mock.call(self.block_device)])
+
+    @mock.patch.object(utils, 'execute')
+    def test_update_warpdrive_firmware(self, mocked_execute):
+        onmetal_hardware_manager.LSI_FIRMWARE_VERSION = '10.0.0.0'
+        onmetal_hardware_manager.LSI_WARPDRIVE_DIR = '/warpdrive/10.0.0.0'
+        self.hardware._list_lsi_devices = mock.Mock()
+        self.hardware._list_lsi_devices.return_value = self.FAKE_DEVICES
+        self.hardware.update_warpdrive_firmware({})
+        mocked_execute.assert_has_calls([
+            mock.call(
+                onmetal_hardware_manager.DDCLI, '-c', '1', '-updatepkg',
+                '/warpdrive/10.0.0.0/NWD-BLP4-1600_10.0.0.0.bin',
+                check_exit_code=[0]),
+            mock.call(
+                onmetal_hardware_manager.DDCLI, '-c', '2', '-updatepkg',
+                '/warpdrive/10.0.0.0/NWD-BLP4-1600_10.0.0.0.bin',
+                check_exit_code=[0])
+        ])
+
+    @mock.patch.object(utils, 'execute')
+    def test_update_warpdrive_firmware_same_version(self, mocked_execute):
+        onmetal_hardware_manager.LSI_FIRMWARE_VERSION = '12.0.0.0'
+        self.hardware._list_lsi_devices = mock.Mock()
+        self.hardware._list_lsi_devices.return_value = self.FAKE_DEVICES
+        self.hardware.update_warpdrive_firmware({})
+        mocked_execute.assert_has_calls([])
