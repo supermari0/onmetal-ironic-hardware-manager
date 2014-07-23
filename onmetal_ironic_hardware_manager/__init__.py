@@ -59,7 +59,7 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
                 'state': 'upgrade_bios',
                 'function': 'upgrade_bios',
                 'priority': 10,
-                'reboot_requested': True,
+                'reboot_requested': False,
             },
             {
                 'state': 'decom_bios_settings',
@@ -107,7 +107,12 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
 
     def upgrade_bios(self, driver_info):
         LOG.info('Update BIOS called with %s' % driver_info)
-        cmd = os.path.join(BIOS_DIR, 'flash_bios.sh')
+        # This instance of flash_bios will automatically reboot the machine
+        # in order to avoid situations where the BMC is unreachable after BIOS
+        # upgrades. 
+        # fixme(jayf): Can cause a machine to go to error if reboot happens after
+        # successful heartbeat but before Ironic gets command_status().
+        cmd = os.path.join(BIOS_DIR, 'flash_bios_ifneeded_reboot.sh')
         utils.execute(cmd, check_exit_code=[0])
         return True
 
