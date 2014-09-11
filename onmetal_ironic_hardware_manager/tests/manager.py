@@ -223,3 +223,168 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
         self.hardware._list_lsi_devices.return_value = self.FAKE_DEVICES
         self.hardware.update_warpdrive_firmware({})
         mocked_execute.assert_has_calls([])
+
+
+class TestOnMetalVerifyPorts(test_base.BaseTestCase):
+    def setUp(self):
+        super(TestOnMetalVerifyPorts, self).setUp()
+        self.hardware = onmetal_hardware_manager.OnMetalHardwareManager()
+        self.interfaces = [
+            hardware.NetworkInterface('eth0', 'aa:bb:cc:dd:ee:ff'),
+            hardware.NetworkInterface('eth1', 'ff:ee:dd:cc:bb:aa')]
+        self.lldp_info = {
+            'eth0': [
+                # Chassis ID
+                (1, 'switch1'),
+                # Port ID
+                (2, '\x05Ethernet1/1'),
+                # TTL
+                (3, '\x00x'),
+                # Port Description
+                (4, 'port1'),
+                # System Name
+                (5, 'switch1'),
+            ],
+            'eth1': [
+                (1, 'switch2'),
+                (2, '\x05Ethernet2/1'),
+                (3, '\x00x'),
+                (4, 'port2'),
+                (5, 'switch2'),
+            ]
+        }
+
+        self.node = {
+            'extra': {
+                'hardware/interfaces/0/mac_address': 'aa:bb:cc:dd:ee:ff',
+                'hardware/interfaces/0/name': 'eth0',
+                'hardware/interfaces/0/switch_chassis_id': 'switch1',
+                'hardware/interfaces/0/switch_port_id': 'Eth1/1',
+                'hardware/interfaces/1/mac_address': 'ff:ee:dd:cc:bb:aa',
+                'hardware/interfaces/1/name': 'eth1',
+                'hardware/interfaces/1/switch_chassis_id': 'switch2',
+                'hardware/interfaces/1/switch_port_id': 'Eth2/1',
+            }
+        }
+
+        self.ports = [
+            {
+                'address': 'aa:bb:cc:dd:ee:ff',
+                'extra': {
+                    'chassis': 'switch1',
+                    'port': 'Eth1/1'
+                }
+            },
+            {
+                'address': 'ff:ee:dd:cc:bb:aa',
+                'extra': {
+                    'chassis': 'switch2',
+                    'port': 'Eth2/1'
+                }
+            }
+        ]
+
+        self.netiface = {
+            17: [{'broadcast': 'ff:ff:ff:ff:ff:ff',
+                  'addr': 'aa:bb:cc:dd:ee:ff'}],
+            2: [{'broadcast': '10.0.0.255',
+                 'netmask': '255.255.255.0',
+                 'addr': '10.0.0.2'}],
+            10: [{'netmask': 'ffff:ffff:ffff:ffff::',
+                  'addr': '2001:4802:7801:102:be76:4eff:fe20:67ae'},
+                 {'netmask': 'ffff:ffff:ffff:ffff::',
+                  'addr': 'fe80::be76:4eff:fe20:67ae%eth0'}]
+        }
+
+        self.port_tuples = set([('switch2', 'eth2/1'), ('switch1', 'eth1/1')])
+
+    @mock.patch('onmetal_ironic_hardware_manager.OnMetalHardwareManager.'
+                '_get_node_ports')
+    @mock.patch('onmetal_ironic_hardware_manager.OnMetalHardwareManager.'
+                '_get_port_from_lldp')
+    @mock.patch('ironic_python_agent.netutils.get_lldp_info')
+    @mock.patch('onmetal_ironic_hardware_manager.OnMetalHardwareManager.'
+                'list_network_interfaces')
+    def test_verify_ports(self, list_mock, lldp_mock,
+                          lldp_ports_mock, node_ports_mock):
+        list_mock.return_value = self.interfaces
+        lldp_mock.return_value = {
+            'eth0': self.lldp_info['eth0'],
+            'eth1': self.lldp_info['eth1']
+        }
+
+        node_ports_mock.return_value = self.port_tuples
+        lldp_ports_mock.side_effect = [
+            ('switch1', 'eth1/1'),
+            ('switch2', 'eth2/1')
+        ]
+
+        self.hardware.verify_ports(self.node, self.ports)
+
+    @mock.patch('onmetal_ironic_hardware_manager.OnMetalHardwareManager.'
+                '_get_node_ports')
+    @mock.patch('onmetal_ironic_hardware_manager.OnMetalHardwareManager.'
+                '_get_port_from_lldp')
+    @mock.patch('ironic_python_agent.netutils.get_lldp_info')
+    @mock.patch('onmetal_ironic_hardware_manager.OnMetalHardwareManager.'
+                'list_network_interfaces')
+    def test_verify_ports_mismatch(self, list_mock, lldp_mock,
+                                   lldp_ports_mock, node_ports_mock):
+        list_mock.return_value = self.interfaces
+        lldp_mock.return_value = {
+            'eth0': self.lldp_info['eth0'],
+            'eth1': self.lldp_info['eth1']
+        }
+
+        node_ports_mock.return_value = self.port_tuples
+        lldp_ports_mock.side_effect = [
+            ('switch1', 'Eth1/2'),  # mismatch port
+            ('switch2', 'Eth2/1')
+        ]
+
+        self.assertRaises(errors.VerificationFailed,
+                          self.hardware.verify_ports,
+                          self.node,
+                          self.ports)
+
+    @mock.patch('onmetal_ironic_hardware_manager.OnMetalHardwareManager.'
+                '_get_node_ports')
+    @mock.patch('onmetal_ironic_hardware_manager.OnMetalHardwareManager.'
+                '_get_port_from_lldp')
+    @mock.patch('ironic_python_agent.netutils.get_lldp_info')
+    @mock.patch('onmetal_ironic_hardware_manager.OnMetalHardwareManager.'
+                'list_network_interfaces')
+    def test_verify_ports_unmatched(self, list_mock, lldp_mock,
+                                    lldp_ports_mock, node_ports_mock):
+        list_mock.return_value = self.interfaces
+        # Node has more ports than detected
+        lldp_mock.return_value = {
+            'eth0': self.lldp_info['eth0'],
+        }
+
+        node_ports_mock.return_value = self.port_tuples
+        lldp_ports_mock.side_effect = [
+            ('switch1', 'Eth1/1'),
+        ]
+
+        self.assertRaises(errors.VerificationFailed,
+                          self.hardware.verify_ports,
+                          self.node,
+                          self.ports)
+
+    def test__get_tlv_malformed(self):
+        self.lldp_info['eth0'][0] = ('bad tlv',)
+        self.assertRaises(errors.VerificationError,
+                          self.hardware._get_tlv,
+                          1,
+                          self.lldp_info['eth0'])
+
+    def test__get_port_from_lldp(self):
+        expected_ports = ('switch1', 'eth1/1')
+        ports = self.hardware._get_port_from_lldp(self.lldp_info['eth0'])
+        self.assertEqual(expected_ports, ports)
+
+    def test__get_node_ports(self):
+        expected_ports = set([('switch2', 'eth2/1'), ('switch1', 'eth1/1')])
+        ports = self.hardware._get_node_ports(self.node, self.ports)
+        self.assertEqual(expected_ports, ports)
