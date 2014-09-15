@@ -204,7 +204,7 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
         onmetal_hardware_manager.LSI_WARPDRIVE_DIR = '/warpdrive/10.0.0.0'
         self.hardware._list_lsi_devices = mock.Mock()
         self.hardware._list_lsi_devices.return_value = self.FAKE_DEVICES
-        self.hardware.update_warpdrive_firmware({})
+        self.hardware.update_warpdrive_firmware({}, [])
         mocked_execute.assert_has_calls([
             mock.call(
                 onmetal_hardware_manager.DDCLI, '-c', '1', '-updatepkg',
@@ -221,5 +221,5 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
         onmetal_hardware_manager.LSI_FIRMWARE_VERSION = '12.0.0.0'
         self.hardware._list_lsi_devices = mock.Mock()
         self.hardware._list_lsi_devices.return_value = self.FAKE_DEVICES
-        self.hardware.update_warpdrive_firmware({})
+        self.hardware.update_warpdrive_firmware({}, [])
         mocked_execute.assert_has_calls([])
