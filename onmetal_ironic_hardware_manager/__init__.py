@@ -37,7 +37,7 @@ LOG = logging.getLogger(__name__)
 
 
 class OnMetalHardwareManager(hardware.GenericHardwareManager):
-    HARDWARE_MANAGER_VERSION = "1"
+    HARDWARE_MANAGER_VERSION = "2"
 
     def evaluate_hardware_support(cls):
         return hardware.HardwareSupport.SERVICE_PROVIDER
@@ -231,6 +231,12 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
         :raises VerificationStepDoesNotExist: if a given step isn't a function
                 of the hardware manager
         """
+        node_ports = self._get_node_ports(node, ports)
+        if not node_ports:
+            # Fail gracefully if we cannot find node ports. If call is made
+            # with only driver_info, don't fail.
+            return
+
         interface_names = [x.name for x in self.list_network_interfaces()]
         lldp_info = netutils.get_lldp_info(interface_names)
 
@@ -240,7 +246,6 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
         for lldp in lldp_info.values():
             lldp_ports.add(self._get_port_from_lldp(lldp))
         LOG.info('LLDP ports: %s', lldp_ports)
-        node_ports = self._get_node_ports(node, ports)
         LOG.info('Node ports: %s', node_ports)
         # TODO(JoshNang) add check that ports, chassis *and* interface match
         # when port/chassis are stored on Port objects
