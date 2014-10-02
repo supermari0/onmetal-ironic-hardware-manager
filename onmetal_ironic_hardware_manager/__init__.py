@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
 import os
 import re
 
 from ironic_python_agent import errors
 from ironic_python_agent import hardware
 from ironic_python_agent import netutils
+from ironic_python_agent.openstack.common import log
 from ironic_python_agent import utils
 
 
@@ -30,10 +30,10 @@ LSI_FIRMWARE_VERSION = '11.00.00.00'
 LSI_WARPDRIVE_DIR = os.path.join('/mnt/LSI', LSI_FIRMWARE_VERSION)
 DDCLI = os.path.join(LSI_WARPDRIVE_DIR, 'ddcli')
 
+LOG = log.getLogger()
+
 LLDP_PORT_TYPE = 2
 LLDP_CHASSIS_TYPE = 5
-
-LOG = logging.getLogger(__name__)
 
 
 class OnMetalHardwareManager(hardware.GenericHardwareManager):
@@ -101,17 +101,18 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
                 'reboot_requested': True,
             },
             {
+                'state': 'verify_ports',
+                'function': 'verify_ports',
+                'priority': 60,
+                'reboot_requested': False
+            },
+            # priority=None steps will only be run via the API, not during
+            # standard decom
+            {
                 'state': 'verify_properties',
                 'function': 'verify_properties',
                 'priority': None,
                 'reboot_requested': False
-            },
-            {
-                'state': 'verify_ports',
-                'function': 'verify_ports',
-                'priority': 61,
-                # Reboot into fresh agent before we allowing deploys
-                'reboot_requested': True
             }
         ]
 
@@ -226,13 +227,11 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
 
         :param node: a dict representation of a Node object
         :param ports: a dict representation of Ports connected to the node
-        :raises VerificationException: if any of the steps determine the node
+        :raises VerificationFailed: if any of the steps determine the node
                 does not match the given data
-        :raises VerificationStepDoesNotExist: if a given step isn't a function
-                of the hardware manager
         """
-        node_ports = self._get_node_ports(node, ports)
-        if not node_ports:
+        node_switchports = self._get_node_switchports(node, ports)
+        if not node_switchports:
             # Fail gracefully if we cannot find node ports. If call is made
             # with only driver_info, don't fail.
             return
@@ -246,18 +245,18 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
         for lldp in lldp_info.values():
             lldp_ports.add(self._get_port_from_lldp(lldp))
         LOG.info('LLDP ports: %s', lldp_ports)
-        LOG.info('Node ports: %s', node_ports)
+        LOG.info('Node ports: %s', node_switchports)
         # TODO(JoshNang) add check that ports, chassis *and* interface match
         # when port/chassis are stored on Port objects
 
         # Compare the ports
-        if node_ports != lldp_ports:
+        if node_switchports != lldp_ports:
             LOG.error('Ports did not match, LLDP: %(lldp)s, Node: %(node)s',
-                      {'lldp': lldp_ports, 'node': node_ports})
+                      {'lldp': lldp_ports, 'node': node_switchports})
             raise errors.VerificationFailed(
                 'Detected port mismatches. LLDP detected_ports: %(lldp)s, '
                 'Node ports: %(node)s.' %
-                {'lldp': lldp_ports, 'node': node_ports})
+                {'lldp': lldp_ports, 'node': node_switchports})
 
         # Return the LLDP info
         LOG.debug('Ports match, returning LLDP info: %s', lldp_info)
@@ -284,7 +283,7 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
         lldp_port = 'eth' + port_number.group()
         return tlv_chassis[0].lower(), lldp_port.lower()
 
-    def _get_node_ports(self, node, ports):
+    def _get_node_switchports(self, node, ports):
         """Find the chassis and ports the node is attached to
 
         Return a set of tuples (chassis, port). Supports pulling them
@@ -295,21 +294,24 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
         :param ports: a dict representation of Ports connected to the node
         :return: a Set of tuples (chassis, port)
         """
-        ports = set()
+        if not node.get('extra'):
+            return set()
         LOG.info('Matching against node ports: %s', node.get('extra'))
-        for key, val in node.get('extra', {}).items():
-            match = re.search(r'hardware/interfaces/(?P<id>\d+)/'
-                              r'switch_chassis_id', key)
-            if match:
-                index = match.group('id')
-                port_key = r'hardware/interfaces/%s/switch_port_id' % index
-                try:
-                    ports.add((val.lower(), node['extra'][port_key].lower()))
-                except KeyError:
-                    raise errors.VerificationError(
-                        'Node has malformed extra data, could not find chassis'
-                        ' and port: %s' % node['extra'])
-        return ports
+        try:
+            return set([
+                (node['extra']['hardware/interfaces/0/'
+                               'switch_chassis_id'].lower(),
+                 node['extra']['hardware/interfaces/0/'
+                               'switch_port_id'].lower()),
+                (node['extra']['hardware/interfaces/1/'
+                               'switch_chassis_id'].lower(),
+                 node['extra']['hardware/interfaces/1/'
+                               'switch_port_id'].lower())
+            ])
+        except KeyError:
+            raise errors.VerificationError(
+                'Node has malformed extra data, could not find chassis'
+                ' and port: %s' % node['extra'])
 
     def _get_tlv(self, tlv_type, lldp_info):
         """Return all LLDP values that match a TLV type (an int) as a list."""

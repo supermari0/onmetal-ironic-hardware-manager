@@ -299,7 +299,7 @@ class TestOnMetalVerifyPorts(test_base.BaseTestCase):
         self.port_tuples = set([('switch2', 'eth2/1'), ('switch1', 'eth1/1')])
 
     @mock.patch('onmetal_ironic_hardware_manager.OnMetalHardwareManager.'
-                '_get_node_ports')
+                '_get_node_switchports')
     @mock.patch('onmetal_ironic_hardware_manager.OnMetalHardwareManager.'
                 '_get_port_from_lldp')
     @mock.patch('ironic_python_agent.netutils.get_lldp_info')
@@ -322,7 +322,7 @@ class TestOnMetalVerifyPorts(test_base.BaseTestCase):
         self.hardware.verify_ports(self.node, self.ports)
 
     @mock.patch('onmetal_ironic_hardware_manager.OnMetalHardwareManager.'
-                '_get_node_ports')
+                '_get_node_switchports')
     @mock.patch('onmetal_ironic_hardware_manager.OnMetalHardwareManager.'
                 '_get_port_from_lldp')
     @mock.patch('ironic_python_agent.netutils.get_lldp_info')
@@ -348,7 +348,7 @@ class TestOnMetalVerifyPorts(test_base.BaseTestCase):
                           self.ports)
 
     @mock.patch('onmetal_ironic_hardware_manager.OnMetalHardwareManager.'
-                '_get_node_ports')
+                '_get_node_switchports')
     @mock.patch('onmetal_ironic_hardware_manager.OnMetalHardwareManager.'
                 '_get_port_from_lldp')
     @mock.patch('ironic_python_agent.netutils.get_lldp_info')
@@ -384,7 +384,7 @@ class TestOnMetalVerifyPorts(test_base.BaseTestCase):
         ports = self.hardware._get_port_from_lldp(self.lldp_info['eth0'])
         self.assertEqual(expected_ports, ports)
 
-    def test__get_node_ports(self):
+    def test__get_node_switchports(self):
         expected_ports = set([('switch2', 'eth2/1'), ('switch1', 'eth1/1')])
-        ports = self.hardware._get_node_ports(self.node, self.ports)
+        ports = self.hardware._get_node_switchports(self.node, self.ports)
         self.assertEqual(expected_ports, ports)
