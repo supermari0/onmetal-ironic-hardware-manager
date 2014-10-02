@@ -13,9 +13,11 @@
 # limitations under the License.
 
 import os
+import re
 
 from ironic_python_agent import errors
 from ironic_python_agent import hardware
+from ironic_python_agent import netutils
 from ironic_python_agent.openstack.common import log
 from ironic_python_agent import utils
 
@@ -30,9 +32,12 @@ DDCLI = os.path.join(LSI_WARPDRIVE_DIR, 'ddcli')
 
 LOG = log.getLogger()
 
+LLDP_PORT_TYPE = 2
+LLDP_CHASSIS_TYPE = 5
+
 
 class OnMetalHardwareManager(hardware.GenericHardwareManager):
-    HARDWARE_MANAGER_VERSION = "1"
+    HARDWARE_MANAGER_VERSION = "2"
 
     def evaluate_hardware_support(cls):
         return hardware.HardwareSupport.SERVICE_PROVIDER
@@ -95,6 +100,20 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
                 'priority': 50,
                 'reboot_requested': True,
             },
+            {
+                'state': 'verify_ports',
+                'function': 'verify_ports',
+                'priority': 60,
+                'reboot_requested': False
+            },
+            # priority=None steps will only be run via the API, not during
+            # standard decom
+            {
+                'state': 'verify_properties',
+                'function': 'verify_properties',
+                'priority': None,
+                'reboot_requested': False
+            }
         ]
 
     def decom_bios_settings(self, node, ports):
@@ -202,3 +221,106 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
                 '{0}').format(result[0]))
 
         return True
+
+    def verify_ports(self, node, ports):
+        """Given Port dicts, verify they match LLDP information
+
+        :param node: a dict representation of a Node object
+        :param ports: a dict representation of Ports connected to the node
+        :raises VerificationFailed: if any of the steps determine the node
+                does not match the given data
+        """
+        node_switchports = self._get_node_switchports(node, ports)
+        if not node_switchports:
+            # Fail gracefully if we cannot find node ports. If call is made
+            # with only driver_info, don't fail.
+            return
+
+        interface_names = [x.name for x in self.list_network_interfaces()]
+        lldp_info = netutils.get_lldp_info(interface_names)
+
+        # Both should be a set of tuples: (chassis, port)
+        lldp_ports = set()
+
+        for lldp in lldp_info.values():
+            lldp_ports.add(self._get_port_from_lldp(lldp))
+        LOG.info('LLDP ports: %s', lldp_ports)
+        LOG.info('Node ports: %s', node_switchports)
+        # TODO(JoshNang) add check that ports, chassis *and* interface match
+        # when port/chassis are stored on Port objects
+
+        # Compare the ports
+        if node_switchports != lldp_ports:
+            LOG.error('Ports did not match, LLDP: %(lldp)s, Node: %(node)s',
+                      {'lldp': lldp_ports, 'node': node_switchports})
+            raise errors.VerificationFailed(
+                'Detected port mismatches. LLDP detected_ports: %(lldp)s, '
+                'Node ports: %(node)s.' %
+                {'lldp': lldp_ports, 'node': node_switchports})
+
+        # Return the LLDP info
+        LOG.debug('Ports match, returning LLDP info: %s', lldp_info)
+        # Ensure the return value is properly encode or JSON throws errors
+        return unicode(lldp_info)
+
+    def _get_port_from_lldp(self, lldp_info):
+        """Return a set of tuples (chassis, port) from the given LLDP info
+
+        :param lldp_info: the return from netutils.get_lldp_info()
+        :return: a Set of tuples (chassis, port)
+        """
+
+        tlv_port = self._get_tlv(LLDP_PORT_TYPE, lldp_info)
+        tlv_chassis = self._get_tlv(LLDP_CHASSIS_TYPE, lldp_info)
+
+        if len(tlv_port) != 1 or len(tlv_chassis) != 1:
+            raise errors.VerificationError(
+                'Malformed LLDP info. Received port: %(port)s, '
+                'chassis: %(chassis)s' %
+                {'port': tlv_port, 'chassis': tlv_chassis})
+
+        port_number = re.search(r'\d{1,2}/\d{1,2}', tlv_port[0])
+        lldp_port = 'eth' + port_number.group()
+        return tlv_chassis[0].lower(), lldp_port.lower()
+
+    def _get_node_switchports(self, node, ports):
+        """Find the chassis and ports the node is attached to
+
+        Return a set of tuples (chassis, port). Supports pulling them
+        from node['extra'], with support for pull chassis/port/interface from
+        port['extra'] in the future.
+
+        :param node: a dict representation of a Node object
+        :param ports: a dict representation of Ports connected to the node
+        :return: a Set of tuples (chassis, port)
+        """
+        if not node.get('extra'):
+            return set()
+        LOG.info('Matching against node ports: %s', node.get('extra'))
+        try:
+            return set([
+                (node['extra']['hardware/interfaces/0/'
+                               'switch_chassis_id'].lower(),
+                 node['extra']['hardware/interfaces/0/'
+                               'switch_port_id'].lower()),
+                (node['extra']['hardware/interfaces/1/'
+                               'switch_chassis_id'].lower(),
+                 node['extra']['hardware/interfaces/1/'
+                               'switch_port_id'].lower())
+            ])
+        except KeyError:
+            raise errors.VerificationError(
+                'Node has malformed extra data, could not find chassis'
+                ' and port: %s' % node['extra'])
+
+    def _get_tlv(self, tlv_type, lldp_info):
+        """Return all LLDP values that match a TLV type (an int) as a list."""
+        # Use a list because TLV type 127 may be be used multiple times in LLDP
+        values = []
+        for tlv in lldp_info:
+            if len(tlv) != 2:
+                raise errors.VerificationError('Malformed LLDP info %s'
+                                               % lldp_info)
+            if tlv[0] == tlv_type:
+                values.append(tlv[1])
+        return values
