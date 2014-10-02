@@ -97,25 +97,29 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
             },
         ]
 
-    def decom_bios_settings(self, driver_info):
+    def decom_bios_settings(self, node, ports):
+        driver_info = node.get('driver_info', {})
         LOG.info('Decom BIOS Settings called with %s' % driver_info)
         cmd = os.path.join(BIOS_DIR, 'write_bios_settings_decom.sh')
         utils.execute(cmd, check_exit_code=[0])
         return True
 
-    def customer_bios_settings(self, driver_info):
+    def customer_bios_settings(self, node, ports):
+        driver_info = node.get('driver_info', {})
         LOG.info('Customer BIOS Settings called with %s' % driver_info)
         cmd = os.path.join(BIOS_DIR, 'write_bios_settings_customer.sh')
         utils.execute(cmd, check_exit_code=[0])
         return True
 
-    def upgrade_bios(self, driver_info):
+    def upgrade_bios(self, node, ports):
+        driver_info = node.get('driver_info', {})
         LOG.info('Update BIOS called with %s' % driver_info)
         cmd = os.path.join(BIOS_DIR, 'flash_bios.sh')
         utils.execute(cmd, check_exit_code=[0])
         return True
 
-    def update_warpdrive_firmware(self, driver_info):
+    def update_warpdrive_firmware(self, node, ports):
+        driver_info = node.get('driver_info', {})
         LOG.info('Update Warpdrive called with %s' % driver_info)
         devices = self._list_lsi_devices()
         for device in devices:
@@ -136,8 +140,9 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
                              'version': device['version']
                          })
 
-    def update_intel_nic_firmware(self, driver_info):
-        LOG.info('NOOP: Update Intel NIC called with %s' % driver_info)
+    def update_intel_nic_firmware(self, node, ports):
+        LOG.info('NOOP: Update Intel NIC called with %s' %
+                 node.get('driver_info'))
 
     def _list_lsi_devices(self):
         lines = utils.execute(DDCLI, '-listall')[0].split('\n')
