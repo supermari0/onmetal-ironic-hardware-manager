@@ -222,6 +222,41 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
 
         return True
 
+    def _verify_memory_size(self, properties, hardware):
+        """Verifies memory size is the same as listed in node.properties."""
+        # Convert bytes to MB
+        given = hardware['memory'].total / (1024 * 1024)
+        actual = properties.get('memory_mb', 0)
+
+        # Tolerate 2% difference from given result
+        if .98 * given <= actual <= 1.02 * given:
+            raise errors.VerificationFailed(
+                'Node memory size %(given)s does not match detected '
+                'count %(actual)s' % {'given': given, 'actual': actual})
+
+    def _verify_disks_size(self, properties, hardware):
+        """Verifies disk size is the same as listed in node.properties."""
+        actual = properties.get('local_gb', 0)
+        # TODO(JoshNang) fix listing hardware twice
+        name = self.get_os_install_device()
+        disk = None
+        for device in hardware['disks']:
+            if device.name == name:
+                disk = device
+                break
+
+        # Make sure not to skip if this is a diskless system
+        if not disk and actual > 0:
+            raise errors.VerificationFailed(
+                'Could not find a disk to match to local_gb.')
+        # Convert bytes to GB
+
+        given = disk.size / (1000 * 1000 * 1000)
+        if .95 * given <= actual <= 1.05 * given:
+            raise errors.VerificationFailed(
+                'Node disk size %(given)s does not match detected '
+                'size %(actual)s' % {'given': given, 'actual': actual})
+
     def verify_ports(self, node, ports):
         """Given Port dicts, verify they match LLDP information
 
