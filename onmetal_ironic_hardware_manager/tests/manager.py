@@ -28,40 +28,48 @@ if six.PY2:
 else:
     OPEN_FUNCTION_NAME = 'builtins.open'
 
-DDCLI_LISTALL_OUT = (
+DDOEMCLI_LISTALL_OUT = (
     '\n'
     '*************************************************************************'
         '***\n'
-    '   LSI Corporation WarpDrive Management Utility\n'
-    '   Version 112.00.01.00 (2014.03.04)\n'
-    '   Copyright (c) 2014 LSI Corporation. All Rights Reserved.\n'
+    '   SEAGATE WarpDrive Management Utility\n'
+    '   Version 112.00.07.00 (2014.08.27)\n'
+    '   Copyright (c) 2014 Seagate Technologies LLC. All Rights Reserved.\n'
     '*************************************************************************'
         '***\n'
     '\n'
     'ID    WarpDrive     Package Version    PCI Address\n'
     '--    ---------     ---------------    -----------\n'
-    '1     NWD-BLP4-1600      11.00.00.00        00:02:00:00\n'
-    '2     NWD-BLP4-1600      11.00.00.00        00:04:00:00\n'
+    '1     NWD-BLP4-1600      12.22.00.00        00:02:00:00\n'
+    '2     NWD-BLP4-1600      12.22.00.00        00:04:00:00\n'
     '\n'
-    'LSI WarpDrive Management Utility: Execution completed successfully.\n'
+    'Seagate WarpDrive Management Utility: Execution completed successfully.\n'
 )
 
-DDCLI_FORMAT_OUT = (
+DDOEMCLI_FORMAT_OUT = (
     '\n'
     '*************************************************************************'
         '***\n'
-    '   LSI Corporation WarpDrive Management Utility\n'
-    '   Version 112.00.01.00 (2014.03.04)\n'
-    '   Copyright (c) 2014 LSI Corporation. All Rights Reserved.\n'
+    '   Seagate WarpDrive Management Utility\n'
+    '   Version 112.00.07.00 (2014.08.27)\n'
+    '   Copyright (c) 2014 Seagate Technologies LLC. All Rights Reserved.\n'
     '*************************************************************************'
         '***\n'
-    'LSI WarpDrive Management Utility: Preparing WarpDrive for format.\n'
-    'LSI WarpDrive Management Utility: Please wait. Format of WarpDrive is in '
-        'progress.....\n'
-    'LSI WarpDrive Management Utility: WarpDrive format successfully '
+    'Seagate WarpDrive Management Utility: Preparing WarpDrive for format.\n'
+    'Seagate WarpDrive Management Utility: Please wait. Format of WarpDrive '
+        'is in progress.....\n'
+    'Media Erase is set to extended\n'
+    'Media Erase is changed to standard.\n'
+    'Media Erase is set to extended\n'
+    'Media Erase is changed to standard.\n'
+    'Media Erase is set to extended\n'
+    'Media Erase is changed to standard.\n'
+    'Media Erase is set to extended\n'
+    'Media Erase is changed to standard.\n'
+    'Seagate WarpDrive Management Utility: WarpDrive format successfully '
         'completed.\n'
     '\n'
-    'LSI WarpDrive Management Utility: Execution completed successfully.\n'
+    'Seagate WarpDrive Management Utility: Execution completed successfully.\n'
 )
 
 
@@ -77,13 +85,13 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
                 'id': '1',
                 'model': 'NWD-BLP4-1600',
                 'pci_address': '00:02:00',
-                'version': '11.00.00.00'
+                'version': '12.22.00.00'
             },
             {
                 'id': '2',
                 'model': 'NWD-BLP4-1600',
                 'pci_address': '00:04:00',
-                'version': '11.00.00.00'
+                'version': '12.22.00.00'
             }
         ]
 
@@ -96,8 +104,8 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
     @mock.patch.object(utils, 'execute')
     def test__list_lsi_devices(self, mocked_execute):
         mocked_execute.side_effect = [
-            (DDCLI_LISTALL_OUT, ''),
-            (DDCLI_FORMAT_OUT, ''),
+            (DDOEMCLI_LISTALL_OUT, ''),
+            (DDOEMCLI_FORMAT_OUT, ''),
         ]
         devices = self.hardware._list_lsi_devices()
         self.assertEqual(self.FAKE_DEVICES, devices)
@@ -114,12 +122,12 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
         mocked_realpath.return_value = ('/sys/devices/pci0000:00/0000:00:02.0'
             '/0000:02:00.0/host3/target3:1:0/3:1:0:0/block/sdb')
 
-        mocked_execute.return_value = (DDCLI_FORMAT_OUT, '')
+        mocked_execute.return_value = (DDOEMCLI_FORMAT_OUT, '')
 
         self.hardware.erase_block_device(self.block_device)
 
         mocked_execute.assert_has_calls([
-            mock.call(onmetal_hardware_manager.DDCLI,
+            mock.call(onmetal_hardware_manager.DDOEMCLI,
             '-c', '1', '-format', '-op', '-level', 'nom', '-s')
         ])
 
@@ -172,7 +180,7 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
             '/0000:02:00.0/host3/target3:1:0/3:1:0:0/block/sdb')
 
         # Presumably it doesn't print success on an error
-        error_output = DDCLI_LISTALL_OUT.replace(
+        error_output = DDOEMCLI_LISTALL_OUT.replace(
             'WarpDrive format successfully completed.',
             'Something went terribly, terribly wrong.')
 
@@ -182,7 +190,7 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
                           self.block_device)
 
         mocked_execute.assert_has_calls([
-            mock.call(onmetal_hardware_manager.DDCLI,
+            mock.call(onmetal_hardware_manager.DDOEMCLI,
                 '-c', '1', '-format', '-op', '-level', 'nom', '-s'),
         ])
 
@@ -199,26 +207,58 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
         mocked_generic.assert_has_calls([mock.call(self.block_device)])
 
     @mock.patch.object(utils, 'execute')
-    def test_update_warpdrive_firmware(self, mocked_execute):
-        onmetal_hardware_manager.LSI_FIRMWARE_VERSION = '10.0.0.0'
-        onmetal_hardware_manager.LSI_WARPDRIVE_DIR = '/warpdrive/10.0.0.0'
+    def test_update_warpdrive_firmware_upgrade_both(self, mocked_execute):
+        self.FAKE_DEVICES[0]['version'] = '11.00.00.00'
+        self.FAKE_DEVICES[1]['version'] = '11.00.00.00'
+
         self.hardware._list_lsi_devices = mock.Mock()
         self.hardware._list_lsi_devices.return_value = self.FAKE_DEVICES
         self.hardware.update_warpdrive_firmware({}, [])
         mocked_execute.assert_has_calls([
             mock.call(
-                onmetal_hardware_manager.DDCLI, '-c', '1', '-updatepkg',
-                '/warpdrive/10.0.0.0/NWD-BLP4-1600_10.0.0.0.bin',
+                onmetal_hardware_manager.DDOEMCLI, '-c', '1', '-f',
+                os.path.join(onmetal_hardware_manager.LSI_WARPDRIVE_DIR,
+                             onmetal_hardware_manager.LSI_FIRMWARE_PREFLASH),
                 check_exit_code=[0]),
             mock.call(
-                onmetal_hardware_manager.DDCLI, '-c', '2', '-updatepkg',
-                '/warpdrive/10.0.0.0/NWD-BLP4-1600_10.0.0.0.bin',
+                onmetal_hardware_manager.DDOEMCLI, '-c', '1', '-updatepkg',
+                os.path.join(onmetal_hardware_manager.LSI_WARPDRIVE_DIR,
+                             onmetal_hardware_manager.LSI_FIRMWARE_PACKAGE),
+                check_exit_code=[0]),
+            mock.call(
+                onmetal_hardware_manager.DDOEMCLI, '-c', '2', '-f',
+                os.path.join(onmetal_hardware_manager.LSI_WARPDRIVE_DIR,
+                             onmetal_hardware_manager.LSI_FIRMWARE_PREFLASH),
+                check_exit_code=[0]),
+            mock.call(
+                onmetal_hardware_manager.DDOEMCLI, '-c', '2', '-updatepkg',
+                os.path.join(onmetal_hardware_manager.LSI_WARPDRIVE_DIR,
+                             onmetal_hardware_manager.LSI_FIRMWARE_PACKAGE),
+                check_exit_code=[0]),
+        ])
+
+    @mock.patch.object(utils, 'execute')
+    def test_update_warpdrive_firmware_upgrade_one(self, mocked_execute):
+        self.FAKE_DEVICES[1]['version'] = '11.00.00.00'
+
+        self.hardware._list_lsi_devices = mock.Mock()
+        self.hardware._list_lsi_devices.return_value = self.FAKE_DEVICES
+        self.hardware.update_warpdrive_firmware({}, [])
+        mocked_execute.assert_has_calls([
+            mock.call(
+                onmetal_hardware_manager.DDOEMCLI, '-c', '2', '-f',
+                os.path.join(onmetal_hardware_manager.LSI_WARPDRIVE_DIR,
+                             onmetal_hardware_manager.LSI_FIRMWARE_PREFLASH),
+                check_exit_code=[0]),
+            mock.call(
+                onmetal_hardware_manager.DDOEMCLI, '-c', '2', '-updatepkg',
+                os.path.join(onmetal_hardware_manager.LSI_WARPDRIVE_DIR,
+                             onmetal_hardware_manager.LSI_FIRMWARE_PACKAGE),
                 check_exit_code=[0])
         ])
 
     @mock.patch.object(utils, 'execute')
     def test_update_warpdrive_firmware_same_version(self, mocked_execute):
-        onmetal_hardware_manager.LSI_FIRMWARE_VERSION = '12.0.0.0'
         self.hardware._list_lsi_devices = mock.Mock()
         self.hardware._list_lsi_devices.return_value = self.FAKE_DEVICES
         self.hardware.update_warpdrive_firmware({}, [])
