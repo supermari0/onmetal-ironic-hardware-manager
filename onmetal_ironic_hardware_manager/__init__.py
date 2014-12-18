@@ -66,9 +66,9 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
         """
         return [
             {
-                'state': 'remove_bootloader'
+                'state': 'remove_bootloader',
                 'function': 'remove_bootloader',
-                'priority': 01,
+                'priority': 1,
                 'reboot_requested': False,
             },
             {
@@ -142,7 +142,7 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
         LOG.info('Remove Bootloader called with %s' % driver_info)
         bootdisk = self.get_os_install_device()
         cmd = ['dd', 'if=/dev/zero', 'of=' + bootdisk, 'bs=1M', 'count=1']
-        utils.execute(cmd, check_exit_code=[0])
+        utils.execute(*cmd, check_exit_code=[0])
         return True
 
     def upgrade_bios(self, node, ports):
