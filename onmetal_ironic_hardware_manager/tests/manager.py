@@ -264,6 +264,20 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
         self.hardware.update_warpdrive_firmware({}, [])
         mocked_execute.assert_has_calls([])
 
+    @mock.patch.object(utils, 'execute')
+    def test_remove_bootloader(self, mocked_execute):
+        self.hardware.get_os_install_device = mock.Mock()
+        self.hardware.get_os_install_device.return_value = '/dev/hdz'
+        self.hardware.remove_bootloader({}, [])
+
+        mocked_execute.assert_has_calls([mock.call(
+            'dd',
+            'if=/dev/zero',
+            'of=/dev/hdz',
+            'bs=1M',
+            'count=1',
+            check_exit_code=[0])])
+
 
 class TestOnMetalVerifyPorts(test_base.BaseTestCase):
     def setUp(self):
