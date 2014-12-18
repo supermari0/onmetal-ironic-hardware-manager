@@ -67,6 +67,12 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
         """
         return [
             {
+                'state': 'remove_bootloader',
+                'function': 'remove_bootloader',
+                'priority': 1,
+                'reboot_requested': False,
+            },
+            {
                 'state': 'upgrade_bios',
                 'function': 'upgrade_bios',
                 'priority': 10,
@@ -130,6 +136,14 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
         LOG.info('Customer BIOS Settings called with %s' % driver_info)
         cmd = os.path.join(BIOS_DIR, 'write_bios_settings_customer.sh')
         utils.execute(cmd, check_exit_code=[0])
+        return True
+
+    def remove_bootloader(self, node, ports):
+        driver_info = node.get('driver_info', {})
+        LOG.info('Remove Bootloader called with %s' % driver_info)
+        bootdisk = self.get_os_install_device()
+        cmd = ['dd', 'if=/dev/zero', 'of=' + bootdisk, 'bs=1M', 'count=1']
+        utils.execute(*cmd, check_exit_code=[0])
         return True
 
     def upgrade_bios(self, node, ports):
