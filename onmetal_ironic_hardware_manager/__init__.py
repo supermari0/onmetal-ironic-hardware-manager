@@ -15,6 +15,7 @@
 import os
 import re
 
+from ironic_python_agent.common import metrics
 from ironic_python_agent import errors
 from ironic_python_agent import hardware
 from ironic_python_agent import netutils
@@ -44,6 +45,7 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
     def evaluate_hardware_support(cls):
         return hardware.HardwareSupport.SERVICE_PROVIDER
 
+    @metrics.instrument(__name__, 'erase_block_device')
     def erase_block_device(self, block_device):
         if self._erase_lsi_warpdrive(block_device):
             return
@@ -124,6 +126,7 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
             }
         ]
 
+    @metrics.instrument(__name__, 'decom_bios_settings')
     def decom_bios_settings(self, node, ports):
         driver_info = node.get('driver_info', {})
         LOG.info('Decom BIOS Settings called with %s' % driver_info)
@@ -131,6 +134,7 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
         utils.execute(cmd, check_exit_code=[0])
         return True
 
+    @metrics.instrument(__name__, 'customer_bios_settings')
     def customer_bios_settings(self, node, ports):
         driver_info = node.get('driver_info', {})
         LOG.info('Customer BIOS Settings called with %s' % driver_info)
@@ -138,6 +142,7 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
         utils.execute(cmd, check_exit_code=[0])
         return True
 
+    @metrics.instrument(__name__, 'remove_bootloader')
     def remove_bootloader(self, node, ports):
         driver_info = node.get('driver_info', {})
         LOG.info('Remove Bootloader called with %s' % driver_info)
@@ -146,6 +151,7 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
         utils.execute(*cmd, check_exit_code=[0])
         return True
 
+    @metrics.instrument(__name__, 'upgrade_bios')
     def upgrade_bios(self, node, ports):
         driver_info = node.get('driver_info', {})
         LOG.info('Update BIOS called with %s' % driver_info)
@@ -153,6 +159,7 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
         utils.execute(cmd, check_exit_code=[0])
         return True
 
+    @metrics.instrument(__name__, 'update_warpdrive_firmware')
     def update_warpdrive_firmware(self, node, ports):
         driver_info = node.get('driver_info', {})
         LOG.info('Update Warpdrive called with %s' % driver_info)
@@ -170,8 +177,12 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
                 precmd = [DDOEMCLI, '-c', device['id'], '-f', preflash_path]
                 cmd = [DDOEMCLI, '-c', device['id'],
                        '-updatepkg', firmware_path]
-                utils.execute(*precmd, check_exit_code=[0])
-                utils.execute(*cmd, check_exit_code=[0])
+                with metrics.instrument_context(
+                        __name__, 'upgrade_warpdrive_firmware_preflash'):
+                    utils.execute(*precmd, check_exit_code=[0])
+                with metrics.instrument_context(
+                        __name__, 'upgrade_warpdrive_firmware_package'):
+                    utils.execute(*cmd, check_exit_code=[0])
             else:
                 LOG.info('Device %(id)s already version %(version)s, '
                          'not upgrading.' % {
@@ -201,47 +212,52 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
     def _erase_lsi_warpdrive(self, block_device):
         if block_device.model != LSI_MODEL:
             return False
-        device_name = os.path.basename(block_device.name)
-        sys_block_path = '{0}/block/{1}'.format(self.sys_path, device_name)
 
-        # NOTE(russell_h): Trying to map a block device name to an LSI card
-        # gets a little weird. It seems like if we follow the /sys/block/<name>
-        # symlink, we'll find something that looks like:
-        #
-        # /sys/devices/pci0000:00/0000:00:02.0/0000:02:00.0/host3/target3:1:0
-        #     /3:1:0:0/block/sdb
-        #
-        # This seems to correspond to the card that ddcli reports has PCI
-        # address 00:02:00:00
-        real_path = os.path.realpath(sys_block_path)
+        # NOTE(JayF): Start timing here, so any devices short circuited
+        # don't produce invalidly-short metrics.
+        with metrics.instrument_context(__name__, 'erase_lsi_warpdrive'):
+            device_name = os.path.basename(block_device.name)
+            sys_block_path = '{0}/block/{1}'.format(self.sys_path, device_name)
 
-        # pull out a segment such as 0000:02:00.0 and trim it to 00:02:00
-        pci_address = real_path.split('/')[5][2:-2]
+            # NOTE(russell_h): Trying to map a block device name to an LSI card
+            # gets a little weird. It seems like if we follow the
+            # /sys/block/<name> symlink, we'll find something that looks like:
+            #
+            # /sys/devices/pci0000:00/0000:00:02.0/0000:02:00.0/host3/
+            #      target3:1:0/3:1:0:0/block/sdb
+            #
+            # This seems to correspond to the card that ddcli reports has PCI
+            # address 00:02:00:00
+            real_path = os.path.realpath(sys_block_path)
 
-        devices = self._list_lsi_devices()
+            # pull out a segment such as 0000:02:00.0 and trim it to 00:02:00
+            pci_address = real_path.split('/')[5][2:-2]
 
-        matching_devices = [device for device in devices if
-                            device['pci_address'] == pci_address]
+            devices = self._list_lsi_devices()
 
-        if len(matching_devices) == 0:
-            raise errors.BlockDeviceEraseError(('Unable to locate an LSI card '
-                'with a PCI Address matching {0} for block device {1}').format(
-                    pci_address, block_device.name))
+            matching_devices = [device for device in devices if
+                                device['pci_address'] == pci_address]
 
-        if len(matching_devices) > 1:
-            raise errors.BlockDeviceEraseError(('Found multiple LSI cards '
-                'with a PCI Address matching {0} for block device {1}').format(
-                    pci_address, block_device.name))
+            if len(matching_devices) == 0:
+                raise errors.BlockDeviceEraseError(('Unable to locate an LSI '
+                    'card with a PCI Address matching {0} for block device '
+                    '{1}').format(pci_address, block_device.name))
 
-        device = matching_devices[0]
-        result = utils.execute(DDOEMCLI, '-c', device['id'], '-format', '-op',
-                '-level', 'nom', '-s')
-        if 'WarpDrive format successfully completed.' not in result[0]:
-            raise errors.BlockDeviceEraseError(('Erasing LSI card failed: '
-                '{0}').format(result[0]))
+            if len(matching_devices) > 1:
+                raise errors.BlockDeviceEraseError(('Found multiple LSI '
+                    'cards with a PCI Address matching {0} for block device '
+                    '{1}').format(pci_address, block_device.name))
+
+            device = matching_devices[0]
+            result = utils.execute(DDOEMCLI, '-c', device['id'], '-format',
+                    '-op', '-level', 'nom', '-s')
+            if 'WarpDrive format successfully completed.' not in result[0]:
+                raise errors.BlockDeviceEraseError(('Erasing LSI card failed: '
+                    '{0}').format(result[0]))
 
         return True
 
+    @metrics.instrument(__name__, 'verify_ports')
     def verify_ports(self, node, ports):
         """Given Port dicts, verify they match LLDP information
 
