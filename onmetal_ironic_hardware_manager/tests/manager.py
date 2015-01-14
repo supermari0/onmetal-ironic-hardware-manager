@@ -28,49 +28,14 @@ if six.PY2:
 else:
     OPEN_FUNCTION_NAME = 'builtins.open'
 
-DDOEMCLI_LISTALL_OUT = (
-    '\n'
-    '*************************************************************************'
-        '***\n'
-    '   SEAGATE WarpDrive Management Utility\n'
-    '   Version 112.00.07.00 (2014.08.27)\n'
-    '   Copyright (c) 2014 Seagate Technologies LLC. All Rights Reserved.\n'
-    '*************************************************************************'
-        '***\n'
-    '\n'
-    'ID    WarpDrive     Package Version    PCI Address\n'
-    '--    ---------     ---------------    -----------\n'
-    '1     NWD-BLP4-1600      12.22.00.00        00:02:00:00\n'
-    '2     NWD-BLP4-1600      12.22.00.00        00:04:00:00\n'
-    '\n'
-    'Seagate WarpDrive Management Utility: Execution completed successfully.\n'
-)
 
-DDOEMCLI_FORMAT_OUT = (
-    '\n'
-    '*************************************************************************'
-        '***\n'
-    '   Seagate WarpDrive Management Utility\n'
-    '   Version 112.00.07.00 (2014.08.27)\n'
-    '   Copyright (c) 2014 Seagate Technologies LLC. All Rights Reserved.\n'
-    '*************************************************************************'
-        '***\n'
-    'Seagate WarpDrive Management Utility: Preparing WarpDrive for format.\n'
-    'Seagate WarpDrive Management Utility: Please wait. Format of WarpDrive '
-        'is in progress.....\n'
-    'Media Erase is set to extended\n'
-    'Media Erase is changed to standard.\n'
-    'Media Erase is set to extended\n'
-    'Media Erase is changed to standard.\n'
-    'Media Erase is set to extended\n'
-    'Media Erase is changed to standard.\n'
-    'Media Erase is set to extended\n'
-    'Media Erase is changed to standard.\n'
-    'Seagate WarpDrive Management Utility: WarpDrive format successfully '
-        'completed.\n'
-    '\n'
-    'Seagate WarpDrive Management Utility: Execution completed successfully.\n'
-)
+def _read_file(test_data):
+    filename = os.path.join(os.path.dirname(__file__), test_data)
+    with open(filename, 'r') as data:
+        return data.read()
+
+DDOEMCLI_FORMAT_OUT = _read_file('data/ddoemcli_format_out.txt')
+DDOEMCLI_LISTALL_OUT = _read_file('data/ddoemcli_listall_out.txt')
 
 
 class TestOnMetalHardwareManager(test_base.BaseTestCase):
