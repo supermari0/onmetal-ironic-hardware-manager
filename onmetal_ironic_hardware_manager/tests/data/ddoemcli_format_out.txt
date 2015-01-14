@@ -1,0 +1,19 @@
+
+****************************************************************************
+   Seagate WarpDrive Management Utility
+   Version 112.00.07.00 (2014.08.27)
+   Copyright (c) 2014 Seagate Technologies LLC. All Rights Reserved.
+****************************************************************************
+Seagate WarpDrive Management Utility: Preparing WarpDrive for format.
+Seagate WarpDrive Management Utility: Please wait. Format of WarpDrive is in progress.....
+Media Erase is set to extended
+Media Erase is changed to standard.
+Media Erase is set to extended
+Media Erase is changed to standard.
+Media Erase is set to extended
+Media Erase is changed to standard.
+Media Erase is set to extended
+Media Erase is changed to standard.
+Seagate WarpDrive Management Utility: WarpDrive format successfully completed.
+
+Seagate WarpDrive Management Utility: Execution completed successfully.
