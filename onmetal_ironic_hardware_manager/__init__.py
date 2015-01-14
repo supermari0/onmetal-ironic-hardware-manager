@@ -15,6 +15,8 @@
 import os
 import re
 
+import six
+
 from ironic_python_agent.common import metrics
 from ironic_python_agent import errors
 from ironic_python_agent import hardware
@@ -103,6 +105,12 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
                 'function': 'erase_devices',
                 'priority': 40,
                 'reboot_requested': False,
+            },
+            {
+                'state': 'get_disk_metrics',
+                'function': 'get_disk_metrics',
+                'priority': 41,
+                'reboot_requested': False
             },
             {
                 'state': 'customer_bios_settings',
@@ -209,8 +217,66 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
             })
         return devices
 
+    def _is_warpdrive(self, block_device):
+        if block_device.model == LSI_MODEL:
+            return True
+
+    def _get_smartctl_attributes(self, block_device):
+        smartout = utils.execute('smartctl', '--attributes', block_device.name)
+        header = None
+        it = iter(smartout.split('\n'))
+        for line in it:
+            if line.strip().startswith('ID#'):
+                header = line.strip().split()
+                break
+
+        attributes = {}
+        for line in it:
+            line = line.strip()
+            if not line:
+                continue
+            linelist = line.split()
+            key = linelist[0] + '-' + linelist[1]
+            value = dict(zip(header[2:], linelist[2:]))
+            attributes[key] = value
+
+        return attributes
+
+    def _send_gauges(self, prefix, metrics_to_send):
+        """Batch-send gauges to MetricsLogger.
+
+        :param prefix: The prefix given to MetricLogger
+        :param metrics: Dict in the format {'key': 'value'} where key is the
+                        metric name and value is the metric.
+        """
+        logger = metrics.getLogger(prefix)
+        for name, gauge in six.iteritems(metrics_to_send):
+            logger.gauge(name, gauge)
+
+    def get_disk_metrics(self):
+        smart_data_columns = ['VALUE', 'WORST', 'RAW_VALUE']
+        block_devices = self.list_block_devices()
+        for block_device in block_devices:
+            if self._is_warpdrive(block_device):
+                # TODO(JayF): Add support for Warpdrive
+                LOG.info('Block device {0} not yet supported for collecting'
+                         'metrics'.format(block_device.name))
+            else:
+                disk_metrics = self._get_smartctl_attributes(block_device)
+                prefix = 'smartdata_{0}_{1}'.format(
+                        os.path.basename(block_device.name),
+                        block_device.model.translate(None, " "))
+                metrics_to_send = {}
+                for k, v in six.iteritems(disk_metrics):
+                    if v['RAW_VALUE'] == '0':
+                        continue
+                    for heading in smart_data_columns:
+                        key = k + '.' + heading
+                        metrics_to_send[key] = v[heading]
+                self._send_gauges(prefix, metrics_to_send)
+
     def _erase_lsi_warpdrive(self, block_device):
-        if block_device.model != LSI_MODEL:
+        if not self._is_warpdrive(block_device):
             return False
 
         # NOTE(JayF): Start timing here, so any devices short circuited

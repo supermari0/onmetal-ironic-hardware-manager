@@ -1,0 +1,298 @@
+
+****************************************************************************
+   SEAGATE WarpDrive Management Utility
+   Version 112.00.07.00 (2014.08.27)
+   Copyright (c) 2014 Seagate Technologies LLC. All Rights Reserved.
+****************************************************************************
+
+--------------------------------------------------
+NWD-BLP4-1600 ID = 1  SAS Address = 500605B 007F11350
+--------------------------------------------------
+
+--------------------------------
+Nytro WarpDrive NWD-BLP4-1600 Health
+--------------------------------
+
+Backup Rail Monitor          : GOOD
+
+
+
+
+SSD Drive SMART Data Slot #: 4: Drive Serial Number             FL00AV2L
+
+-------------- Current (since last Power Cycle)  ----------------------
+Bytes Read                            0
+Soft Read Error Rate                  NA
+Wear Range Delta                      0          (%)
+Uncorrectable RAISE Errors            0
+Current Temperature                   44         (degree C)
+Uncorrectable ECC Errors              0
+SATA R-Errors (CRC) Error Count       0
+
+-------------- Cumulative  --------------------------------------------
+Retired Block Count                   0
+Power-On Hours                        816.2
+Device Power Cycle Count              49
+Gigabytes Erased                      329        (Gigabytes)
+Reserved (over-provisioned) Blocks    32128
+Program Fail Count                    0
+Erase Fail Count 1                    0
+Unexpected Power Loss Count           56
+I/O Error Detection Code Rate         0
+Uncorrectable RAISE Errors            0
+Maximum Lifetime Temperature          82         (degree C)
+Cached SMART Data Age                 00:03:35   (Hours:Minutes:Seconds)
+SSD Life Left (PE Cycles)             100        (%)
+Total Writes From Host                7
+Total Reads To Host                   0
+Write Amplification                   1.29
+Reserved Blocks Remaining             100        (%)
+Trim Count                            0
+
+
+SSD Drive SMART Data Slot #: 5: Drive Serial Number             FL00AV3L
+
+-------------- Current (since last Power Cycle)  ----------------------
+Bytes Read                            0
+Soft Read Error Rate                  NA
+Wear Range Delta                      0          (%)
+Uncorrectable RAISE Errors            0
+Current Temperature                   44         (degree C)
+Uncorrectable ECC Errors              0
+SATA R-Errors (CRC) Error Count       0
+
+-------------- Cumulative  --------------------------------------------
+Retired Block Count                   0
+Power-On Hours                        816.1
+Device Power Cycle Count              47
+Gigabytes Erased                      289        (Gigabytes)
+Reserved (over-provisioned) Blocks    31232
+Program Fail Count                    0
+Erase Fail Count 1                    0
+Unexpected Power Loss Count           52
+I/O Error Detection Code Rate         0
+Uncorrectable RAISE Errors            0
+Maximum Lifetime Temperature          82         (degree C)
+Cached SMART Data Age                 00:03:35   (Hours:Minutes:Seconds)
+SSD Life Left (PE Cycles)             100        (%)
+Total Writes From Host                7
+Total Reads To Host                   0
+Write Amplification                   1.29
+Reserved Blocks Remaining             100        (%)
+Trim Count                            0
+
+
+SSD Drive SMART Data Slot #: 6: Drive Serial Number             FL00AVPL
+
+-------------- Current (since last Power Cycle)  ----------------------
+Bytes Read                            0
+Soft Read Error Rate                  NA
+Wear Range Delta                      0          (%)
+Uncorrectable RAISE Errors            0
+Current Temperature                   39         (degree C)
+Uncorrectable ECC Errors              0
+SATA R-Errors (CRC) Error Count       0
+
+-------------- Cumulative  --------------------------------------------
+Retired Block Count                   0
+Power-On Hours                        816.1
+Device Power Cycle Count              45
+Gigabytes Erased                      262        (Gigabytes)
+Reserved (over-provisioned) Blocks    30848
+Program Fail Count                    0
+Erase Fail Count 1                    0
+Unexpected Power Loss Count           48
+I/O Error Detection Code Rate         0
+Uncorrectable RAISE Errors            0
+Maximum Lifetime Temperature          79         (degree C)
+Cached SMART Data Age                 00:03:35   (Hours:Minutes:Seconds)
+SSD Life Left (PE Cycles)             100        (%)
+Total Writes From Host                7
+Total Reads To Host                   0
+Write Amplification                   1.29
+Reserved Blocks Remaining             100        (%)
+Trim Count                            0
+
+
+SSD Drive SMART Data Slot #: 7: Drive Serial Number             FL00ATTV
+
+-------------- Current (since last Power Cycle)  ----------------------
+Bytes Read                            0
+Soft Read Error Rate                  NA
+Wear Range Delta                      0          (%)
+Uncorrectable RAISE Errors            0
+Current Temperature                   40         (degree C)
+Uncorrectable ECC Errors              0
+SATA R-Errors (CRC) Error Count       0
+
+-------------- Cumulative  --------------------------------------------
+Retired Block Count                   0
+Power-On Hours                        834.4
+Device Power Cycle Count              74
+Gigabytes Erased                      9125       (Gigabytes)
+Reserved (over-provisioned) Blocks    31488
+Program Fail Count                    0
+Erase Fail Count 1                    0
+Unexpected Power Loss Count           89
+I/O Error Detection Code Rate         0
+Uncorrectable RAISE Errors            0
+Maximum Lifetime Temperature          79         (degree C)
+Cached SMART Data Age                 00:03:35   (Hours:Minutes:Seconds)
+SSD Life Left (PE Cycles)             100        (%)
+Total Writes From Host                7936
+Total Reads To Host                   1228
+Write Amplification                   1.02
+Reserved Blocks Remaining             100        (%)
+Trim Count                            0
+
+Warranty Remaining       : 100 %
+Temperature              : 44 degree C
+
+Overall Health           : GOOD
+
+--------------------------------------------------
+NWD-BLP4-1600 ID = 2  SAS Address = 500605B 007B353E0
+--------------------------------------------------
+
+--------------------------------
+Nytro WarpDrive NWD-BLP4-1600 Health
+--------------------------------
+
+Backup Rail Monitor          : GOOD
+
+
+
+
+SSD Drive SMART Data Slot #: 4: Drive Serial Number             FL00ATAZ
+
+-------------- Current (since last Power Cycle)  ----------------------
+Bytes Read                            0
+Soft Read Error Rate                  NA
+Wear Range Delta                      0          (%)
+Uncorrectable RAISE Errors            0
+Current Temperature                   42         (degree C)
+Uncorrectable ECC Errors              0
+SATA R-Errors (CRC) Error Count       0
+
+-------------- Cumulative  --------------------------------------------
+Retired Block Count                   0
+Power-On Hours                        816.1
+Device Power Cycle Count              50
+Gigabytes Erased                      322        (Gigabytes)
+Reserved (over-provisioned) Blocks    31616
+Program Fail Count                    0
+Erase Fail Count 1                    0
+Unexpected Power Loss Count           57
+I/O Error Detection Code Rate         0
+Uncorrectable RAISE Errors            0
+Maximum Lifetime Temperature          68         (degree C)
+Cached SMART Data Age                 00:03:34   (Hours:Minutes:Seconds)
+SSD Life Left (PE Cycles)             100        (%)
+Total Writes From Host                7
+Total Reads To Host                   0
+Write Amplification                   1.29
+Reserved Blocks Remaining             100        (%)
+Trim Count                            0
+
+
+SSD Drive SMART Data Slot #: 5: Drive Serial Number             FL00AV8C
+
+-------------- Current (since last Power Cycle)  ----------------------
+Bytes Read                            0
+Soft Read Error Rate                  NA
+Wear Range Delta                      0          (%)
+Uncorrectable RAISE Errors            0
+Current Temperature                   42         (degree C)
+Uncorrectable ECC Errors              0
+SATA R-Errors (CRC) Error Count       0
+
+-------------- Cumulative  --------------------------------------------
+Retired Block Count                   0
+Power-On Hours                        816.1
+Device Power Cycle Count              48
+Gigabytes Erased                      292        (Gigabytes)
+Reserved (over-provisioned) Blocks    31744
+Program Fail Count                    0
+Erase Fail Count 1                    0
+Unexpected Power Loss Count           53
+I/O Error Detection Code Rate         0
+Uncorrectable RAISE Errors            0
+Maximum Lifetime Temperature          68         (degree C)
+Cached SMART Data Age                 00:03:34   (Hours:Minutes:Seconds)
+SSD Life Left (PE Cycles)             100        (%)
+Total Writes From Host                7
+Total Reads To Host                   0
+Write Amplification                   1.29
+Reserved Blocks Remaining             100        (%)
+Trim Count                            0
+
+
+SSD Drive SMART Data Slot #: 6: Drive Serial Number             FL00ATBB
+
+-------------- Current (since last Power Cycle)  ----------------------
+Bytes Read                            0
+Soft Read Error Rate                  NA
+Wear Range Delta                      0          (%)
+Uncorrectable RAISE Errors            0
+Current Temperature                   38         (degree C)
+Uncorrectable ECC Errors              0
+SATA R-Errors (CRC) Error Count       0
+
+-------------- Cumulative  --------------------------------------------
+Retired Block Count                   0
+Power-On Hours                        816.1
+Device Power Cycle Count              46
+Gigabytes Erased                      266        (Gigabytes)
+Reserved (over-provisioned) Blocks    32128
+Program Fail Count                    0
+Erase Fail Count 1                    0
+Unexpected Power Loss Count           49
+I/O Error Detection Code Rate         0
+Uncorrectable RAISE Errors            0
+Maximum Lifetime Temperature          71         (degree C)
+Cached SMART Data Age                 00:03:34   (Hours:Minutes:Seconds)
+SSD Life Left (PE Cycles)             100        (%)
+Total Writes From Host                7
+Total Reads To Host                   0
+Write Amplification                   1.29
+Reserved Blocks Remaining             100        (%)
+Trim Count                            0
+
+
+SSD Drive SMART Data Slot #: 7: Drive Serial Number             FL00ATBA
+
+-------------- Current (since last Power Cycle)  ----------------------
+Bytes Read                            0
+Soft Read Error Rate                  NA
+Wear Range Delta                      0          (%)
+Uncorrectable RAISE Errors            0
+Current Temperature                   39         (degree C)
+Uncorrectable ECC Errors              0
+SATA R-Errors (CRC) Error Count       0
+
+-------------- Cumulative  --------------------------------------------
+Retired Block Count                   0
+Power-On Hours                        834.3
+Device Power Cycle Count              77
+Gigabytes Erased                      9175       (Gigabytes)
+Reserved (over-provisioned) Blocks    31616
+Program Fail Count                    0
+Erase Fail Count 1                    0
+Unexpected Power Loss Count           92
+I/O Error Detection Code Rate         0
+Uncorrectable RAISE Errors            0
+Maximum Lifetime Temperature          70         (degree C)
+Cached SMART Data Age                 00:03:34   (Hours:Minutes:Seconds)
+SSD Life Left (PE Cycles)             100        (%)
+Total Writes From Host                7977
+Total Reads To Host                   1261
+Write Amplification                   1.02
+Reserved Blocks Remaining             100        (%)
+Trim Count                            0
+
+Warranty Remaining       : 100 %
+Temperature              : 42 degree C
+
+Overall Health           : GOOD
+
+SEAGATE WarpDrive Management Utility: Execution completed successfully.

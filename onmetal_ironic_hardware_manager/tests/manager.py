@@ -34,8 +34,11 @@ def _read_file(test_data):
     with open(filename, 'r') as data:
         return data.read()
 
+
 DDOEMCLI_FORMAT_OUT = _read_file('data/ddoemcli_format_out.txt')
 DDOEMCLI_LISTALL_OUT = _read_file('data/ddoemcli_listall_out.txt')
+DDOEMCLI_HEALTHALL_OUT = _read_file('data/ddoemcli_healthall_out.txt')
+SMARTCTL_ATTRIBUTES_OUT = _read_file('data/smartctl_attributes_out.txt')
 
 
 class TestOnMetalHardwareManager(test_base.BaseTestCase):
@@ -111,7 +114,7 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
                           self.hardware.erase_block_device,
                           self.block_device)
 
-        mocked_execute.assert_has_calls([])
+        mocked_execute.assert_has_calls([], any_order=True)
 
     @mock.patch.object(os.path, 'realpath')
     @mock.patch.object(utils, 'execute')
@@ -241,6 +244,210 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
             'bs=1M',
             'count=1',
             check_exit_code=[0])])
+
+    @mock.patch.object(utils, 'execute')
+    def test__get_smartctl_attributes(self, mocked_execute):
+        expected = {
+            '1-Raw_Read_Error_Rate': {'FLAG': '0x000a',
+                                      'RAW_VALUE': '0',
+                                      'THRESH': '000',
+                                      'TYPE': 'Old_age',
+                                      'UPDATED': 'Always',
+                                      'VALUE': '100',
+                                      'WHEN_FAILED': '-',
+                                      'WORST': '100'},
+            '10-Unknown_SSD_Attribute': {'FLAG': '0x0013',
+                                         'RAW_VALUE': '0',
+                                         'THRESH': '050',
+                                         'TYPE': 'Pre-fail',
+                                         'UPDATED': 'Always',
+                                         'VALUE': '100',
+                                         'WHEN_FAILED': '-',
+                                         'WORST': '100'},
+            '12-Power_Cycle_Count': {'FLAG': '0x0012',
+                                     'RAW_VALUE': '68',
+                                     'THRESH': '000',
+                                     'TYPE': 'Old_age',
+                                     'UPDATED': 'Always',
+                                     'VALUE': '100',
+                                     'WHEN_FAILED': '-',
+                                     'WORST': '100'},
+            '167-Unknown_Attribute': {'FLAG': '0x0022',
+                                      'RAW_VALUE': '0',
+                                      'THRESH': '000',
+                                      'TYPE': 'Old_age',
+                                      'UPDATED': 'Always',
+                                      'VALUE': '100',
+                                      'WHEN_FAILED': '-',
+                                      'WORST': '100'},
+            '168-Unknown_Attribute': {'FLAG': '0x0012',
+                                      'RAW_VALUE': '0',
+                                      'THRESH': '000',
+                                      'TYPE': 'Old_age',
+                                      'UPDATED': 'Always',
+                                      'VALUE': '100',
+                                      'WHEN_FAILED': '-',
+                                      'WORST': '100'},
+            '169-Unknown_Attribute': {'FLAG': '0x0013',
+                                      'RAW_VALUE': '262144',
+                                      'THRESH': '010',
+                                      'TYPE': 'Pre-fail',
+                                      'UPDATED': 'Always',
+                                      'VALUE': '100',
+                                      'WHEN_FAILED': '-',
+                                      'WORST': '100'},
+            '170-Unknown_Attribute': {'FLAG': '0x0013',
+                                      'RAW_VALUE': '0',
+                                      'THRESH': '010',
+                                      'TYPE': 'Pre-fail',
+                                      'UPDATED': 'Always',
+                                      'VALUE': '100',
+                                      'WHEN_FAILED': '-',
+                                      'WORST': '100'},
+            '173-Unknown_Attribute': {'FLAG': '0x0012',
+                                      'RAW_VALUE': '262146',
+                                      'THRESH': '000',
+                                      'TYPE': 'Old_age',
+                                      'UPDATED': 'Always',
+                                      'VALUE': '199',
+                                      'WHEN_FAILED': '-',
+                                      'WORST': '199'},
+            '175-Program_Fail_Count_Chip': {'FLAG': '0x0013',
+                                            'RAW_VALUE': '0',
+                                            'THRESH': '010',
+                                            'TYPE': 'Pre-fail',
+                                            'UPDATED': 'Always',
+                                            'VALUE': '100',
+                                            'WHEN_FAILED': '-',
+                                            'WORST': '100'},
+            '192-Power-Off_Retract_Count': {'FLAG': '0x0012',
+                                            'RAW_VALUE': '0',
+                                            'THRESH': '000',
+                                            'TYPE': 'Old_age',
+                                            'UPDATED': 'Always',
+                                            'VALUE': '100',
+                                            'WHEN_FAILED': '-',
+                                            'WORST': '100'},
+            '194-Temperature_Celsius': {'FLAG': '0x0023',
+                                        'RAW_VALUE': '40',
+                                        'THRESH': '030',
+                                        'TYPE': 'Pre-fail',
+                                        'UPDATED': 'Always',
+                                        'VALUE': '100',
+                                        'WHEN_FAILED': '-',
+                                        'WORST': '100'},
+            '197-Current_Pending_Sector': {'FLAG': '0x0012',
+                                           'RAW_VALUE': '0',
+                                           'THRESH': '000',
+                                           'TYPE': 'Old_age',
+                                           'UPDATED': 'Always',
+                                           'VALUE': '100',
+                                           'WHEN_FAILED': '-',
+                                           'WORST': '100'},
+            '2-Throughput_Performance': {'FLAG': '0x0005',
+                                         'RAW_VALUE': '0',
+                                         'THRESH': '050',
+                                         'TYPE': 'Pre-fail',
+                                         'UPDATED': 'Offline',
+                                         'VALUE': '100',
+                                         'WHEN_FAILED': '-',
+                                         'WORST': '100'},
+            '240-Unknown_SSD_Attribute': {'FLAG': '0x0013',
+                                          'RAW_VALUE': '0',
+                                          'THRESH': '050',
+                                          'TYPE': 'Pre-fail',
+                                          'UPDATED': 'Always',
+                                          'VALUE': '100',
+                                          'WHEN_FAILED': '-',
+                                          'WORST': '100'},
+            '3-Spin_Up_Time': {'FLAG': '0x0007',
+                               'RAW_VALUE': '0',
+                               'THRESH': '050',
+                               'TYPE': 'Pre-fail',
+                               'UPDATED': 'Always',
+                               'VALUE': '100',
+                               'WHEN_FAILED': '-',
+                               'WORST': '100'},
+            '5-Reallocated_Sector_Ct': {'FLAG': '0x0013',
+                                        'RAW_VALUE': '0',
+                                        'THRESH': '050',
+                                        'TYPE': 'Pre-fail',
+                                        'UPDATED': 'Always',
+                                        'VALUE': '100',
+                                        'WHEN_FAILED': '-',
+                                        'WORST': '100'},
+            '7-Unknown_SSD_Attribute': {'FLAG': '0x000b',
+                                        'RAW_VALUE': '0',
+                                        'THRESH': '050',
+                                        'TYPE': 'Pre-fail',
+                                        'UPDATED': 'Always',
+                                        'VALUE': '100',
+                                        'WHEN_FAILED': '-',
+                                        'WORST': '100'},
+            '8-Unknown_SSD_Attribute': {'FLAG': '0x0005',
+                                        'RAW_VALUE': '0',
+                                        'THRESH': '050',
+                                        'TYPE': 'Pre-fail',
+                                        'UPDATED': 'Offline',
+                                        'VALUE': '100',
+                                        'WHEN_FAILED': '-',
+                                        'WORST': '100'},
+            '9-Power_On_Hours': {'FLAG': '0x0012',
+                                 'RAW_VALUE': '1673',
+                                 'THRESH': '000',
+                                 'TYPE': 'Old_age',
+                                 'UPDATED': 'Always',
+                                 'VALUE': '100',
+                                 'WHEN_FAILED': '-',
+                                 'WORST': '100'}
+        }
+
+        mocked_execute.return_value = SMARTCTL_ATTRIBUTES_OUT
+        self.block_device = hardware.BlockDevice('/dev/sda', '32G MLC SATADOM',
+                                                 31016853504, False)
+        actual = self.hardware._get_smartctl_attributes(self.block_device)
+
+        mocked_execute.assert_called_once_with(
+            'smartctl',
+            '--attributes',
+            '/dev/sda')
+
+        self.assertEqual(expected, actual)
+
+    @mock.patch.object(utils, 'execute')
+    def test_get_disk_metrics(self, mocked_execute):
+        mocked_execute.return_value = SMARTCTL_ATTRIBUTES_OUT
+        self.hardware._send_gauges = mock.Mock()
+        self.hardware.list_block_devices = mock.Mock()
+        self.hardware.list_block_devices.return_value = [hardware.BlockDevice(
+            '/dev/sda', '32G MLC SATADOM', 31016853504, False)]
+
+        self.hardware.get_disk_metrics()
+
+        mocked_execute.assert_called_once_with(
+            'smartctl',
+            '--attributes',
+            '/dev/sda')
+
+        self.hardware._send_gauges.assert_called_once_with(
+            'smartdata_sda_32GMLCSATADOM',
+            {
+                '9-Power_On_Hours.VALUE': '100',
+                '9-Power_On_Hours.WORST': '100',
+                '9-Power_On_Hours.RAW_VALUE': '1673',
+                '12-Power_Cycle_Count.VALUE': '100',
+                '12-Power_Cycle_Count.WORST': '100',
+                '12-Power_Cycle_Count.RAW_VALUE': '68',
+                '169-Unknown_Attribute.VALUE': '100',
+                '169-Unknown_Attribute.WORST': '100',
+                '169-Unknown_Attribute.RAW_VALUE': '262144',
+                '173-Unknown_Attribute.VALUE': '199',
+                '173-Unknown_Attribute.WORST': '199',
+                '173-Unknown_Attribute.RAW_VALUE': '262146',
+                '194-Temperature_Celsius.VALUE': '100',
+                '194-Temperature_Celsius.WORST': '100',
+                '194-Temperature_Celsius.RAW_VALUE': '40',
+            })
 
 
 class TestOnMetalVerifyPorts(test_base.BaseTestCase):

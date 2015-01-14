@@ -1,0 +1,27 @@
+smartctl 6.2 2013-07-26 r3841 [x86_64-linux-3.15.2+] (local build)
+Copyright (C) 2002-13, Bruce Allen, Christian Franke, www.smartmontools.org
+
+=== START OF READ SMART DATA SECTION ===
+SMART Attributes Data Structure revision number: 16
+Vendor Specific SMART Attributes with Thresholds:
+ID# ATTRIBUTE_NAME          FLAG     VALUE WORST THRESH TYPE      UPDATED  WHEN_FAILED RAW_VALUE
+  1 Raw_Read_Error_Rate     0x000a   100   100   000    Old_age   Always       -       0
+  2 Throughput_Performance  0x0005   100   100   050    Pre-fail  Offline      -       0
+  3 Spin_Up_Time            0x0007   100   100   050    Pre-fail  Always       -       0
+  5 Reallocated_Sector_Ct   0x0013   100   100   050    Pre-fail  Always       -       0
+  7 Unknown_SSD_Attribute   0x000b   100   100   050    Pre-fail  Always       -       0
+  8 Unknown_SSD_Attribute   0x0005   100   100   050    Pre-fail  Offline      -       0
+  9 Power_On_Hours          0x0012   100   100   000    Old_age   Always       -       1673
+ 10 Unknown_SSD_Attribute   0x0013   100   100   050    Pre-fail  Always       -       0
+ 12 Power_Cycle_Count       0x0012   100   100   000    Old_age   Always       -       68
+167 Unknown_Attribute       0x0022   100   100   000    Old_age   Always       -       0
+168 Unknown_Attribute       0x0012   100   100   000    Old_age   Always       -       0
+169 Unknown_Attribute       0x0013   100   100   010    Pre-fail  Always       -       262144
+170 Unknown_Attribute       0x0013   100   100   010    Pre-fail  Always       -       0
+173 Unknown_Attribute       0x0012   199   199   000    Old_age   Always       -       262146
+175 Program_Fail_Count_Chip 0x0013   100   100   010    Pre-fail  Always       -       0
+192 Power-Off_Retract_Count 0x0012   100   100   000    Old_age   Always       -       0
+194 Temperature_Celsius     0x0023   100   100   030    Pre-fail  Always       -       40 (Min/Max 30/60)
+197 Current_Pending_Sector  0x0012   100   100   000    Old_age   Always       -       0
+240 Unknown_SSD_Attribute   0x0013   100   100   050    Pre-fail  Always       -       0
+
