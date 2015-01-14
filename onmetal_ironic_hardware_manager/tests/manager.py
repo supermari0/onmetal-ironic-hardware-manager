@@ -69,8 +69,7 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
     @mock.patch.object(utils, 'execute')
     def test__list_lsi_devices(self, mocked_execute):
         mocked_execute.side_effect = [
-            (DDOEMCLI_LISTALL_OUT, ''),
-            (DDOEMCLI_FORMAT_OUT, ''),
+            (DDOEMCLI_LISTALL_OUT, '')
         ]
         devices = self.hardware._list_lsi_devices()
         self.assertEqual(self.FAKE_DEVICES, devices)
