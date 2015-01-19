@@ -93,10 +93,9 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
 
         self.hardware.erase_block_device(self.block_device)
 
-        mocked_execute.assert_has_calls([
-            mock.call(onmetal_hardware_manager.DDOEMCLI,
-            '-c', '1', '-format', '-op', '-level', 'nom', '-s')
-        ])
+        mocked_execute.assert_called_once_with(
+                onmetal_hardware_manager.DDOEMCLI,
+                '-c', '1', '-format', '-op', '-level', 'nom', '-s')
 
     @mock.patch.object(os.path, 'realpath')
     @mock.patch.object(utils, 'execute')
@@ -114,7 +113,7 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
                           self.hardware.erase_block_device,
                           self.block_device)
 
-        mocked_execute.assert_has_calls([], any_order=True)
+        self.assertEqual(0, mocked_execute.call_count)
 
     @mock.patch.object(os.path, 'realpath')
     @mock.patch.object(utils, 'execute')
@@ -133,7 +132,7 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
                           self.hardware.erase_block_device,
                           self.block_device)
 
-        mocked_execute.assert_has_calls([])
+        self.assertEqual(0, mocked_execute.call_count)
 
     @mock.patch.object(os.path, 'realpath')
     @mock.patch.object(utils, 'execute')
@@ -156,10 +155,9 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
                           self.hardware.erase_block_device,
                           self.block_device)
 
-        mocked_execute.assert_has_calls([
-            mock.call(onmetal_hardware_manager.DDOEMCLI,
-                '-c', '1', '-format', '-op', '-level', 'nom', '-s'),
-        ])
+        mocked_execute.assert_called_once_with(
+            onmetal_hardware_manager.DDOEMCLI,
+            '-c', '1', '-format', '-op', '-level', 'nom', '-s'),
 
     @mock.patch('ironic_python_agent.hardware.GenericHardwareManager'
                 '.erase_block_device')
@@ -170,8 +168,9 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
 
         self.block_device.model = 'NormalSSD'
         self.hardware.erase_block_device(self.block_device)
-        mocked_execute.assert_has_calls([])
-        mocked_generic.assert_has_calls([mock.call(self.block_device)])
+
+        self.assertEqual(0, mocked_execute.call_count)
+        mocked_generic.assert_called_once_with(self.block_device)
 
     @mock.patch.object(utils, 'execute')
     def test_update_warpdrive_firmware_upgrade_both(self, mocked_execute):
@@ -229,7 +228,7 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
         self.hardware._list_lsi_devices = mock.Mock()
         self.hardware._list_lsi_devices.return_value = self.FAKE_DEVICES
         self.hardware.update_warpdrive_firmware({}, [])
-        mocked_execute.assert_has_calls([])
+        self.assertEqual(0, mocked_execute.call_count)
 
     @mock.patch.object(utils, 'execute')
     def test_remove_bootloader(self, mocked_execute):
@@ -237,13 +236,13 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
         self.hardware.get_os_install_device.return_value = '/dev/hdz'
         self.hardware.remove_bootloader({}, [])
 
-        mocked_execute.assert_has_calls([mock.call(
+        mocked_execute.assert_called_once_with(
             'dd',
             'if=/dev/zero',
             'of=/dev/hdz',
             'bs=1M',
             'count=1',
-            check_exit_code=[0])])
+            check_exit_code=[0])
 
     @mock.patch.object(utils, 'execute')
     def test__get_smartctl_attributes(self, mocked_execute):
