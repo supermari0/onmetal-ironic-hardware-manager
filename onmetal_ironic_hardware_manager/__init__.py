@@ -265,16 +265,20 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
         header = None
         it = iter(smartout.split('\n'))
         for line in it:
+            # note(JayF): skip forward until we get to the header and pull
+            # it out
             if line.strip().startswith('ID#'):
                 header = line.strip().split()
                 break
 
         attributes = {}
+        # note(JayF): All lines at this point contain metrics or are blank.
         for line in it:
             line = line.strip()
             if not line:
                 continue
             linelist = line.split()
+            # note(JayF): match up headers to values to generate a dict
             key = linelist[0] + '-' + linelist[1]
             value = dict(zip(header[2:], linelist[2:]))
             attributes[key] = value
@@ -286,7 +290,10 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
         result = utils.execute(DDOEMCLI, '-c', device['id'], '-health')
         attributes = {}
         attrkey = None
+        # note(JayF): What we really get here is SMART data for the 4 SSDs
+        # behind the Warpdrive card. Split them up to parse separately.
         for idx, lines in enumerate(result.split('SSD Drive SMART')):
+            # note(JayF): The first entry is headers, throw it away
             if idx == 0:
                 continue
             it = iter(lines.split('\n'))
@@ -295,19 +302,31 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
                 if not line:
                     continue
                 if line.startswith('Data Slot #'):
+                    # note(JayF): Get the drive number and serial. The full
+                    # line is actually "SSD Drive SMART Data Slot #" but by
+                    # splitting on it above we lose the first three words.
                     drivenum = line.split()[3][0]
                     driveserial = line.split()[7]
                     attrkey = drivenum + '_' + driveserial
                     attributes[attrkey] = {}
+                # note(JayF): Once we know what drive this is, skip past the
+                # current metrics (which are only for a power cycle), to put
+                # the iterator in the right place for starting to grab k:v
+                # pairs below
                 if line.startswith('-------------- Cumulative'):
                     break
 
             for line in it:
                 line = line.strip()
+                # note(JayF): It doesn't make sense to store time in graphite
                 if not line or line.endswith('(Hours:Minutes:Seconds)'):
                     continue
+                # note(JayF): This is the first line of the footer. If we get
+                # here, we're done parsing.
                 if line.startswith('Warranty Remaining'):
                     break
+                # note(JayF): Some of the metrics have units or notes in
+                # parens, we look for these and adjust our rsplit accordingly
                 if line.endswith('(degree C)'):
                     key = line.rsplit(None, 3)[0].replace(" ", "")
                     value = line.rsplit(None, 3)[1]
@@ -318,6 +337,7 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
                 else:
                     key = line.rsplit(None, 1)[0].replace(" ", "")
                     value = line.rsplit(None, 1)[1]
+                # note(JayF): Ensure all characters are safe for graphite
                 key = re.sub(r'[\(\)/\\]', '_', key)
                 attributes[attrkey][key] = re.sub(r'[\(\)/\\]', '_', value)
 
