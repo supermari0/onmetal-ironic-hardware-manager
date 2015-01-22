@@ -26,9 +26,11 @@ from ironic_python_agent import utils
 BIOS_DIR = '/mnt/bios/quanta_A14'
 LSI_MODEL = 'NWD-BLP4-1600'
 # Directory that all the LSI utilities/firmware are located in
-LSI_FIRMWARE_VERSION = '11.00.00.00'
+LSI_FIRMWARE_VERSION = '12.22.00.00'
+LSI_FIRMWARE_PREFLASH = 'NWD-BLP4-1600_ConcatSigned.fw'
+LSI_FIRMWARE_PACKAGE = 'NWD-BLP4-1600_12.22.00.00.bin'
 LSI_WARPDRIVE_DIR = os.path.join('/mnt/LSI', LSI_FIRMWARE_VERSION)
-DDCLI = os.path.join(LSI_WARPDRIVE_DIR, 'ddcli')
+DDOEMCLI = os.path.join(LSI_WARPDRIVE_DIR, 'ddoemcli')
 
 LOG = log.getLogger()
 
@@ -37,7 +39,7 @@ LLDP_CHASSIS_TYPE = 5
 
 
 class OnMetalHardwareManager(hardware.GenericHardwareManager):
-    HARDWARE_MANAGER_VERSION = "2"
+    HARDWARE_MANAGER_VERSION = "3"
 
     def evaluate_hardware_support(cls):
         return hardware.HardwareSupport.SERVICE_PROVIDER
@@ -64,6 +66,12 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
         dictionaries
         """
         return [
+            {
+                'state': 'remove_bootloader',
+                'function': 'remove_bootloader',
+                'priority': 1,
+                'reboot_requested': False,
+            },
             {
                 'state': 'upgrade_bios',
                 'function': 'upgrade_bios',
@@ -130,6 +138,14 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
         utils.execute(cmd, check_exit_code=[0])
         return True
 
+    def remove_bootloader(self, node, ports):
+        driver_info = node.get('driver_info', {})
+        LOG.info('Remove Bootloader called with %s' % driver_info)
+        bootdisk = self.get_os_install_device()
+        cmd = ['dd', 'if=/dev/zero', 'of=' + bootdisk, 'bs=1M', 'count=1']
+        utils.execute(*cmd, check_exit_code=[0])
+        return True
+
     def upgrade_bios(self, node, ports):
         driver_info = node.get('driver_info', {})
         LOG.info('Update BIOS called with %s' % driver_info)
@@ -144,13 +160,17 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
         for device in devices:
             # Don't reflash the same firmware
             if device['version'] != LSI_FIRMWARE_VERSION:
-                filename = '%(model)s_%(version)s.bin' % {
-                    'model': device['model'],
-                    'version': LSI_FIRMWARE_VERSION
-                }
+                preflash_path = os.path.join(LSI_WARPDRIVE_DIR,
+                                            LSI_FIRMWARE_PREFLASH)
                 firmware_path = os.path.join(LSI_WARPDRIVE_DIR,
-                                             filename)
-                cmd = [DDCLI, '-c', device['id'], '-updatepkg', firmware_path]
+                                             LSI_FIRMWARE_PACKAGE)
+
+                # note(JayF): New firmware requires us to flash a new firmware
+                # flasher before flashing the update package
+                precmd = [DDOEMCLI, '-c', device['id'], '-f', preflash_path]
+                cmd = [DDOEMCLI, '-c', device['id'],
+                       '-updatepkg', firmware_path]
+                utils.execute(*precmd, check_exit_code=[0])
                 utils.execute(*cmd, check_exit_code=[0])
             else:
                 LOG.info('Device %(id)s already version %(version)s, '
@@ -164,7 +184,7 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
                  node.get('driver_info'))
 
     def _list_lsi_devices(self):
-        lines = utils.execute(DDCLI, '-listall')[0].split('\n')
+        lines = utils.execute(DDOEMCLI, '-listall')[0].split('\n')
         matching_devices = [line.split() for line in lines if LSI_MODEL
                             in line]
         devices = []
@@ -214,7 +234,7 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
                     pci_address, block_device.name))
 
         device = matching_devices[0]
-        result = utils.execute(DDCLI, '-c', device['id'], '-format', '-op',
+        result = utils.execute(DDOEMCLI, '-c', device['id'], '-format', '-op',
                 '-level', 'nom', '-s')
         if 'WarpDrive format successfully completed.' not in result[0]:
             raise errors.BlockDeviceEraseError(('Erasing LSI card failed: '
