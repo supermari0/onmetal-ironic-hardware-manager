@@ -224,6 +224,79 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
         self.hardware.update_warpdrive_firmware({}, [])
         mocked_execute.assert_has_calls([])
 
+    @mock.patch.object(utils, 'execute')
+    def test_remove_bootloader(self, mocked_execute):
+        self.hardware.get_os_install_device = mock.Mock()
+        self.hardware.get_os_install_device.return_value = '/dev/hdz'
+        self.hardware.remove_bootloader({}, [])
+
+        mocked_execute.assert_has_calls([mock.call(
+            'dd',
+            'if=/dev/zero',
+            'of=/dev/hdz',
+            'bs=1M',
+            'count=1',
+            check_exit_code=[0])])
+
+    def test_verify_blockdevice_count_io_pass(self):
+        self.hardware._get_flavor_from_node = mock.Mock()
+        self.hardware._get_flavor_from_node.return_value = 'onmetal-io1'
+        self.hardware.list_block_devices = mock.Mock()
+        self.hardware.list_block_devices.return_value = [
+            hardware.BlockDevice('/dev/sda', 'NWD-BLP4-1600', 1073741824,
+                                 False),
+            hardware.BlockDevice('/dev/sdb', 'NWD-BLP4-1600', 1073741824,
+                                 False),
+            hardware.BlockDevice('/dev/sdc', '32G MLC SATADOM', 33554432,
+                                 False)]
+
+        self.hardware.verify_hardware({}, [])
+
+    def test_verify_blockdevice_count_io_missing_warpdrive(self):
+        self.hardware._get_flavor_from_node = mock.Mock()
+        self.hardware._get_flavor_from_node.return_value = 'onmetal-io1'
+        self.hardware.list_block_devices = mock.Mock()
+        self.hardware.list_block_devices.return_value = [
+            hardware.BlockDevice('/dev/sda', 'NWD-BLP4-1600', 1073741824,
+                                 False),
+            hardware.BlockDevice('/dev/sdb', '32G MLC SATADOM', 33554432,
+                                 False)]
+
+        self.assertRaises(errors.VerificationError,
+                          self.hardware.verify_hardware, {}, [])
+
+    def test_verify_blockdevice_count_io_missing_satadom(self):
+        self.hardware._get_flavor_from_node = mock.Mock()
+        self.hardware._get_flavor_from_node.return_value = 'onmetal-io1'
+        self.hardware.list_block_devices = mock.Mock()
+        self.hardware.list_block_devices.return_value = [
+            hardware.BlockDevice('/dev/sda', 'NWD-BLP4-1600', 1073741824,
+                                 False),
+            hardware.BlockDevice('/dev/sdb', 'NWD-BLP4-1600', 1073741824,
+                                 False)]
+
+        self.assertRaises(errors.VerificationError,
+                          self.hardware.verify_hardware, {}, [])
+
+    def test_verify_blockdevice_count_missing_satadom(self):
+        self.hardware._get_flavor_from_node = mock.Mock()
+        self.hardware._get_flavor_from_node.return_value = 'onmetal-compute1'
+        self.hardware.list_block_devices = mock.Mock()
+        self.hardware.list_block_devices.return_value = []
+
+        self.assertRaises(errors.VerificationError,
+                          self.hardware.verify_hardware, {}, [])
+
+    def test_verify_blockdevice_count_pass(self):
+        self.hardware._get_flavor_from_node = mock.Mock()
+        self.hardware._get_flavor_from_node.return_value = 'onmetal-compute1'
+        self.hardware.list_block_devices = mock.Mock()
+        self.hardware.list_block_devices.return_value = [
+                hardware.BlockDevice('/dev/sda', '32G MLC SATADOM', 33554432,
+                                     False)]
+
+        self.hardware.verify_hardware({}, [])
+
 
 class TestOnMetalVerifyPorts(test_base.BaseTestCase):
     def setUp(self):

@@ -25,6 +25,7 @@ from ironic_python_agent import utils
 # Directory that all BIOS utilities are located in
 BIOS_DIR = '/mnt/bios/quanta_A14'
 LSI_MODEL = 'NWD-BLP4-1600'
+SATADOM_MODEL = '32G MLC SATADOM'
 # Directory that all the LSI utilities/firmware are located in
 LSI_FIRMWARE_VERSION = '11.00.00.00'
 LSI_WARPDRIVE_DIR = os.path.join('/mnt/LSI', LSI_FIRMWARE_VERSION)
@@ -324,3 +325,32 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
             if tlv[0] == tlv_type:
                 values.append(tlv[1])
         return values
+
+    def _get_flavor_from_node(self, node):
+        ram = node['properties']['memory_mb']
+        if ram == (1024 * 32):
+            return 'onmetal-compute1'
+        if ram == (1024 * 128):
+            return 'onmetal-io1'
+        if ram == (1024 * 512):
+            return 'onmetal-memory1'
+        raise errors.VerificationError('unknown flavor')
+
+    def _verify_blockdevice_count(self, block_devices, model, count):
+        if len([d for d in block_devices if d.model == model]) != count:
+            raise errors.VerificationError('Could not find %(count)s block '
+                    'devices with model name "%(model)s"' %
+                    {'count': count, 'model': model})
+
+    @metrics.instrument(__name__, 'verify_hardware')
+    def verify_hardware(self, node, ports):
+        flavor = self._get_flavor_from_node(node)
+        block_devices = self.list_block_devices()
+
+        if flavor == 'onmetal-io1':
+            # verify it has two IO cards
+            self._verify_blockdevice_count(block_devices, LSI_MODEL, 2)
+
+        # note(JayF): Until we verify more than disks, there's no
+        # difference between memory and compute nodes.
+        self._verify_blockdevice_count(block_devices, SATADOM_MODEL, 1)
