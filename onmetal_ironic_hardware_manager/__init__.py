@@ -356,7 +356,6 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
                     'devices with model name "%(model)s"' %
                     {'count': count, 'model': model})
 
-    @metrics.instrument(__name__, 'verify_hardware')
     def verify_hardware(self, node, ports):
         flavor = self._get_flavor_from_node(node)
         block_devices = self.list_block_devices()
