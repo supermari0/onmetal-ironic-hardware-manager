@@ -28,49 +28,14 @@ if six.PY2:
 else:
     OPEN_FUNCTION_NAME = 'builtins.open'
 
-DDOEMCLI_LISTALL_OUT = (
-    '\n'
-    '*************************************************************************'
-        '***\n'
-    '   SEAGATE WarpDrive Management Utility\n'
-    '   Version 112.00.07.00 (2014.08.27)\n'
-    '   Copyright (c) 2014 Seagate Technologies LLC. All Rights Reserved.\n'
-    '*************************************************************************'
-        '***\n'
-    '\n'
-    'ID    WarpDrive     Package Version    PCI Address\n'
-    '--    ---------     ---------------    -----------\n'
-    '1     NWD-BLP4-1600      12.22.00.00        00:02:00:00\n'
-    '2     NWD-BLP4-1600      12.22.00.00        00:04:00:00\n'
-    '\n'
-    'Seagate WarpDrive Management Utility: Execution completed successfully.\n'
-)
 
-DDOEMCLI_FORMAT_OUT = (
-    '\n'
-    '*************************************************************************'
-        '***\n'
-    '   Seagate WarpDrive Management Utility\n'
-    '   Version 112.00.07.00 (2014.08.27)\n'
-    '   Copyright (c) 2014 Seagate Technologies LLC. All Rights Reserved.\n'
-    '*************************************************************************'
-        '***\n'
-    'Seagate WarpDrive Management Utility: Preparing WarpDrive for format.\n'
-    'Seagate WarpDrive Management Utility: Please wait. Format of WarpDrive '
-        'is in progress.....\n'
-    'Media Erase is set to extended\n'
-    'Media Erase is changed to standard.\n'
-    'Media Erase is set to extended\n'
-    'Media Erase is changed to standard.\n'
-    'Media Erase is set to extended\n'
-    'Media Erase is changed to standard.\n'
-    'Media Erase is set to extended\n'
-    'Media Erase is changed to standard.\n'
-    'Seagate WarpDrive Management Utility: WarpDrive format successfully '
-        'completed.\n'
-    '\n'
-    'Seagate WarpDrive Management Utility: Execution completed successfully.\n'
-)
+def _read_file(test_data):
+    filename = os.path.join(os.path.dirname(__file__), test_data)
+    with open(filename, 'r') as data:
+        return data.read()
+
+DDOEMCLI_FORMAT_OUT = _read_file('data/ddoemcli_format_out.txt')
+DDOEMCLI_LISTALL_OUT = _read_file('data/ddoemcli_listall_out.txt')
 
 
 class TestOnMetalHardwareManager(test_base.BaseTestCase):
@@ -104,8 +69,7 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
     @mock.patch.object(utils, 'execute')
     def test__list_lsi_devices(self, mocked_execute):
         mocked_execute.side_effect = [
-            (DDOEMCLI_LISTALL_OUT, ''),
-            (DDOEMCLI_FORMAT_OUT, ''),
+            (DDOEMCLI_LISTALL_OUT, '')
         ]
         devices = self.hardware._list_lsi_devices()
         self.assertEqual(self.FAKE_DEVICES, devices)
@@ -277,6 +241,65 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
             'bs=1M',
             'count=1',
             check_exit_code=[0])])
+
+    def test_verify_blockdevice_count_io_pass(self):
+        self.hardware._get_flavor_from_node = mock.Mock()
+        self.hardware._get_flavor_from_node.return_value = 'onmetal-io1'
+        self.hardware.list_block_devices = mock.Mock()
+        self.hardware.list_block_devices.return_value = [
+            hardware.BlockDevice('/dev/sda', 'NWD-BLP4-1600', 1073741824,
+                                 False),
+            hardware.BlockDevice('/dev/sdb', 'NWD-BLP4-1600', 1073741824,
+                                 False),
+            hardware.BlockDevice('/dev/sdc', '32G MLC SATADOM', 33554432,
+                                 False)]
+
+        self.hardware.verify_hardware({}, [])
+
+    def test_verify_blockdevice_count_io_missing_warpdrive(self):
+        self.hardware._get_flavor_from_node = mock.Mock()
+        self.hardware._get_flavor_from_node.return_value = 'onmetal-io1'
+        self.hardware.list_block_devices = mock.Mock()
+        self.hardware.list_block_devices.return_value = [
+            hardware.BlockDevice('/dev/sda', 'NWD-BLP4-1600', 1073741824,
+                                 False),
+            hardware.BlockDevice('/dev/sdb', '32G MLC SATADOM', 33554432,
+                                 False)]
+
+        self.assertRaises(errors.VerificationError,
+                          self.hardware.verify_hardware, {}, [])
+
+    def test_verify_blockdevice_count_io_missing_satadom(self):
+        self.hardware._get_flavor_from_node = mock.Mock()
+        self.hardware._get_flavor_from_node.return_value = 'onmetal-io1'
+        self.hardware.list_block_devices = mock.Mock()
+        self.hardware.list_block_devices.return_value = [
+            hardware.BlockDevice('/dev/sda', 'NWD-BLP4-1600', 1073741824,
+                                 False),
+            hardware.BlockDevice('/dev/sdb', 'NWD-BLP4-1600', 1073741824,
+                                 False)]
+
+        self.assertRaises(errors.VerificationError,
+                          self.hardware.verify_hardware, {}, [])
+
+    def test_verify_blockdevice_count_missing_satadom(self):
+        self.hardware._get_flavor_from_node = mock.Mock()
+        self.hardware._get_flavor_from_node.return_value = 'onmetal-compute1'
+        self.hardware.list_block_devices = mock.Mock()
+        self.hardware.list_block_devices.return_value = []
+
+        self.assertRaises(errors.VerificationError,
+                          self.hardware.verify_hardware, {}, [])
+
+    def test_verify_blockdevice_count_pass(self):
+        self.hardware._get_flavor_from_node = mock.Mock()
+        self.hardware._get_flavor_from_node.return_value = 'onmetal-compute1'
+        self.hardware.list_block_devices = mock.Mock()
+        self.hardware.list_block_devices.return_value = [
+                hardware.BlockDevice('/dev/sda', '32G MLC SATADOM', 33554432,
+                                     False)]
+
+        self.hardware.verify_hardware({}, [])
 
 
 class TestOnMetalVerifyPorts(test_base.BaseTestCase):
