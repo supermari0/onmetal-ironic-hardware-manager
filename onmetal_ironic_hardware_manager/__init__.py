@@ -120,6 +120,12 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
             # priority=None steps will only be run via the API, not during
             # standard decom
             {
+                'state': 'verify_hardware',
+                'function': 'verify_hardware',
+                'priority': None,
+                'reboot_requested': False
+            },
+            {
                 'state': 'verify_properties',
                 'function': 'verify_properties',
                 'priority': None,
