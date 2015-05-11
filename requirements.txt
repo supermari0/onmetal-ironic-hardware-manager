@@ -1,1 +1,1 @@
--e git+https://github.com/rackerlabs/ironic-python-agent.git@teeth-latest#egg=ironic_python_agent
+-e git+https://github.com/rackerlabs/ironic-python-agent.git@upstream#egg=ironic_python_agent

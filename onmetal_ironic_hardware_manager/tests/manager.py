@@ -381,7 +381,10 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
         mocked_realpath.return_value = ('/sys/devices/pci0000:00/0000:00:02.0'
             '/0000:06:00.0/host3/target3:1:0/3:1:0:0/block/sdb')
 
-        self.assertRaises(errors.BlockDeviceEraseError,
+        # A CleaningError is raised instead of a BlockDeviceEraseError because
+        # the error was with the cleaning finding the block device rather than
+        # actually erasing an existing block device.
+        self.assertRaises(errors.CleaningError,
                           self.hardware.erase_block_device,
                           self.block_device)
 
@@ -400,7 +403,10 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
         mocked_realpath.return_value = ('/sys/devices/pci0000:00/0000:00:02.0'
             '/0000:02:00.0/host3/target3:1:0/3:1:0:0/block/sdb')
 
-        self.assertRaises(errors.BlockDeviceEraseError,
+        # A CleaningError is raised instead of a BlockDeviceEraseError because
+        # the error was with the cleaning finding the block device rather than
+        # actually erasing an existing block device.
+        self.assertRaises(errors.CleaningError,
                           self.hardware.erase_block_device,
                           self.block_device)
 
@@ -679,7 +685,7 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
             hardware.BlockDevice('/dev/sdb', '32G MLC SATADOM', 33554432,
                                  False)]
 
-        self.assertRaises(errors.VerificationError,
+        self.assertRaises(errors.CleaningError,
                           self.hardware.verify_hardware, {}, [])
 
     def test_verify_blockdevice_count_io_missing_satadom(self):
@@ -692,7 +698,7 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
             hardware.BlockDevice('/dev/sdb', 'NWD-BLP4-1600', 1073741824,
                                  False)]
 
-        self.assertRaises(errors.VerificationError,
+        self.assertRaises(errors.CleaningError,
                           self.hardware.verify_hardware, {}, [])
 
     def test_verify_blockdevice_count_missing_satadom(self):
@@ -701,7 +707,7 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
         self.hardware.list_block_devices = mock.Mock()
         self.hardware.list_block_devices.return_value = []
 
-        self.assertRaises(errors.VerificationError,
+        self.assertRaises(errors.CleaningError,
                           self.hardware.verify_hardware, {}, [])
 
     def test_verify_blockdevice_count_pass(self):
@@ -832,7 +838,7 @@ class TestOnMetalVerifyPorts(test_base.BaseTestCase):
             ('switch2', 'Eth2/1')
         ]
 
-        self.assertRaises(errors.VerificationFailed,
+        self.assertRaises(errors.CleaningError,
                           self.hardware.verify_ports,
                           self.node,
                           self.ports)
@@ -857,14 +863,14 @@ class TestOnMetalVerifyPorts(test_base.BaseTestCase):
             ('switch1', 'Eth1/1'),
         ]
 
-        self.assertRaises(errors.VerificationFailed,
+        self.assertRaises(errors.CleaningError,
                           self.hardware.verify_ports,
                           self.node,
                           self.ports)
 
     def test__get_tlv_malformed(self):
         self.lldp_info['eth0'][0] = ('bad tlv',)
-        self.assertRaises(errors.VerificationError,
+        self.assertRaises(errors.CleaningError,
                           self.hardware._get_tlv,
                           1,
                           self.lldp_info['eth0'])

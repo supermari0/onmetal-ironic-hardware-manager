@@ -21,8 +21,9 @@ from ironic_python_agent.common import metrics
 from ironic_python_agent import errors
 from ironic_python_agent import hardware
 from ironic_python_agent import netutils
-from ironic_python_agent.openstack.common import log
 from ironic_python_agent import utils
+
+from oslo_log import log
 
 
 # Directory that all BIOS utilities are located in
@@ -43,7 +44,12 @@ LLDP_CHASSIS_TYPE = 5
 
 
 class OnMetalHardwareManager(hardware.GenericHardwareManager):
-    HARDWARE_MANAGER_VERSION = "3"
+    # Overrides superclass's name (generic_hardware_manager).
+    HARDWARE_MANAGER_NAME = 'onmetal_hardware_manager'
+    # This should be incremented at every upgrade to avoid making the agent
+    # change which hardware manager it uses when cleaning in the middle of a
+    # hardware manager upgrade.
+    HARDWARE_MANAGER_VERSION = '4'
 
     def evaluate_hardware_support(cls):
         return hardware.HardwareSupport.SERVICE_PROVIDER
@@ -55,88 +61,80 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
 
         super(OnMetalHardwareManager, self).erase_block_device(block_device)
 
-    def get_decommission_steps(self):
-        """Get a list of decommission steps with priority
+    def get_clean_steps(self):
+        """Get a list of clean steps with priority.
 
         Returns a list of dicts of the following form:
-        {'function': the HardwareManager function to call.
-         'priority': the order to call, starting at 1. If two steps share
-                    the same priority, their order is undefined.
-         'reboot_requested': Whether the agent should request Ironic reboots
-                             it after the operation completes.
-         'state': The state the machine will be in when the operation
-                  completes. This will match the decommission_target_state
-                  saved in the Ironic node.
+        {'step': the HardwareManager function to call.
+         'interface': the Ironic interface to use to perform the step. Clean
+                      steps use the deploy interface.
+         'priority': the order to call. Steps with higher priority are called
+                     first.
+         'reboot_requested': whether the agent should reboot after the step is
+                             complete.
         :return: a default list of decommission steps, as a list of
         dictionaries
         """
         return [
             {
-                'state': 'remove_bootloader',
-                'function': 'remove_bootloader',
-                'priority': 1,
-                'reboot_requested': False,
-            },
-            {
-                'state': 'upgrade_bios',
-                'function': 'upgrade_bios',
+                'step': 'remove_bootloader',
+                'interface': 'deploy',
                 'priority': 10,
-                'reboot_requested': True,
-            },
-            {
-                'state': 'decom_bios_settings',
-                'function': 'decom_bios_settings',
-                'priority': 20,
-                'reboot_requested': True,
-            },
-            {
-                'state': 'update_warpdrive_firmware',
-                'function': 'update_warpdrive_firmware',
-                'priority': 30,
                 'reboot_requested': False,
             },
             {
-                'state': 'update_intel_nic_firmware',
-                'function': 'update_intel_nic_firmware',
-                'priority': 31,
+                'step': 'upgrade_bios',
+                'interface': 'deploy',
+                'priority': 9,
                 'reboot_requested': True,
             },
             {
-                'state': 'erase_devices',
-                'function': 'erase_devices',
-                'priority': 40,
+                'step': 'decom_bios_settings',
+                'interface': 'deploy',
+                'priority': 8,
+                'reboot_requested': True,
+            },
+            {
+                'step': 'update_warpdrive_firmware',
+                'interface': 'deploy',
+                'priority': 7,
+                'reboot_requested': False,
+            },
+            # This step is a no-op for now.
+            {
+                'step': 'update_intel_nic_firmware',
+                'interface': 'deploy',
+                'priority': 6,
+                'reboot_requested': True,
+            },
+            {
+                'step': 'erase_devices',
+                'interface': 'deploy',
+                'priority': 5,
                 'reboot_requested': False,
             },
             {
-                'state': 'get_disk_metrics',
-                'function': 'get_disk_metrics',
-                'priority': 41,
+                'step': 'get_disk_metrics',
+                'interface': 'deploy',
+                'priority': 4,
                 'reboot_requested': False
             },
             {
-                'state': 'customer_bios_settings',
-                'function': 'customer_bios_settings',
-                'priority': 50,
+                'step': 'customer_bios_settings',
+                'interface': 'deploy',
+                'priority': 3,
                 'reboot_requested': True,
             },
             {
-                'state': 'verify_ports',
-                'function': 'verify_ports',
-                'priority': 60,
+                'step': 'verify_ports',
+                'interface': 'deploy',
+                'priority': 2,
                 'reboot_requested': False
             },
             {
-                'state': 'verify_hardware',
-                'function': 'verify_hardware',
-                'priority': 61,
-                'reboot_requested': False
-            },
-            # priority=None steps will only be run via the API, not during
-            # standard decom
-            {
-                'state': 'verify_properties',
-                'function': 'verify_properties',
-                'priority': None,
+                'step': 'verify_hardware',
+                'interface': 'deploy',
+                'priority': 1,
                 'reboot_requested': False
             }
         ]
@@ -248,16 +246,12 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
                             device['pci_address'] == pci_address]
 
         if len(matching_devices) == 0:
-            # TODO(JayF): Use a more approprate error once we're using new
-            # HardwareManager API in production
-            raise errors.BlockDeviceEraseError(('Unable to locate an LSI '
+            raise errors.CleaningError(('Unable to locate an LSI '
                 'card with a PCI Address matching {0} for block device '
                 '{1}').format(pci_address, block_device.name))
 
         if len(matching_devices) > 1:
-            # TODO(JayF): Use a more appropriate error once we're using new
-            # HardwareManager API in production
-            raise errors.BlockDeviceEraseError(('Found multiple LSI '
+            raise errors.CleaningError(('Found multiple LSI '
                 'cards with a PCI Address matching {0} for block device '
                 '{1}').format(pci_address, block_device.name))
 
@@ -413,7 +407,7 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
 
         :param node: a dict representation of a Node object
         :param ports: a dict representation of Ports connected to the node
-        :raises VerificationFailed: if any of the steps determine the node
+        :raises CleaningError: if any of the steps determine the node
                 does not match the given data
         """
         node_switchports = self._get_node_switchports(node, ports)
@@ -439,7 +433,10 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
         if node_switchports != lldp_ports:
             LOG.error('Ports did not match, LLDP: %(lldp)s, Node: %(node)s',
                       {'lldp': lldp_ports, 'node': node_switchports})
-            raise errors.VerificationFailed(
+            # TODO(supermari0) The old error here - VerificationError - seems
+            # not to exist or have existed. It would be good if we had more
+            # specific errors that subclass CleaningError.
+            raise errors.CleaningError(
                 'Detected port mismatches. LLDP detected_ports: %(lldp)s, '
                 'Node ports: %(node)s.' %
                 {'lldp': lldp_ports, 'node': node_switchports})
@@ -460,7 +457,7 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
         tlv_chassis = self._get_tlv(LLDP_CHASSIS_TYPE, lldp_info)
 
         if len(tlv_port) != 1 or len(tlv_chassis) != 1:
-            raise errors.VerificationError(
+            raise errors.CleaningError(
                 'Malformed LLDP info. Received port: %(port)s, '
                 'chassis: %(chassis)s' %
                 {'port': tlv_port, 'chassis': tlv_chassis})
@@ -495,7 +492,7 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
                                'switch_port_id'].lower())
             ])
         except KeyError:
-            raise errors.VerificationError(
+            raise errors.CleaningError(
                 'Node has malformed extra data, could not find chassis'
                 ' and port: %s' % node['extra'])
 
@@ -505,7 +502,7 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
         values = []
         for tlv in lldp_info:
             if len(tlv) != 2:
-                raise errors.VerificationError('Malformed LLDP info %s'
+                raise errors.CleaningError('Malformed LLDP info %s'
                                                % lldp_info)
             if tlv[0] == tlv_type:
                 values.append(tlv[1])
@@ -519,11 +516,11 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
             return 'onmetal-io1'
         if ram == (1024 * 512):
             return 'onmetal-memory1'
-        raise errors.VerificationError('unknown flavor')
+        raise errors.CleaningError('unknown flavor')
 
     def _verify_blockdevice_count(self, block_devices, model, count):
         if len([d for d in block_devices if d.model == model]) != count:
-            raise errors.VerificationError('Could not find %(count)s block '
+            raise errors.CleaningError('Could not find %(count)s block '
                     'devices with model name "%(model)s"' %
                     {'count': count, 'model': model})
 
