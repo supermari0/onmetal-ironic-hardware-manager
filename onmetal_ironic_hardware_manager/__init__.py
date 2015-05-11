@@ -15,6 +15,8 @@
 import os
 import re
 
+import six
+
 from ironic_python_agent.common import metrics
 from ironic_python_agent import errors
 from ironic_python_agent import hardware
@@ -106,6 +108,12 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
                 'reboot_requested': False,
             },
             {
+                'state': 'get_disk_metrics',
+                'function': 'get_disk_metrics',
+                'priority': 41,
+                'reboot_requested': False
+            },
+            {
                 'state': 'customer_bios_settings',
                 'function': 'customer_bios_settings',
                 'priority': 50,
@@ -169,7 +177,7 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
             # Don't reflash the same firmware
             if device['version'] != LSI_FIRMWARE_VERSION:
                 preflash_path = os.path.join(LSI_WARPDRIVE_DIR,
-                                            LSI_FIRMWARE_PREFLASH)
+                                             LSI_FIRMWARE_PREFLASH)
                 firmware_path = os.path.join(LSI_WARPDRIVE_DIR,
                                              LSI_FIRMWARE_PACKAGE)
 
@@ -210,46 +218,181 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
             })
         return devices
 
+    def _get_warpdrive_card(self, block_device):
+        device_name = os.path.basename(block_device.name)
+        sys_block_path = '{0}/block/{1}'.format(self.sys_path, device_name)
+
+        # NOTE(russell_h): Trying to map a block device name to an LSI card
+        # gets a little weird. It seems like if we follow the
+        # /sys/block/<name> symlink, we'll find something that looks like:
+        #
+        # /sys/devices/pci0000:00/0000:00:02.0/0000:02:00.0/host3/
+        #      target3:1:0/3:1:0:0/block/sdb
+        #
+        # This seems to correspond to the card that ddcli reports has PCI
+        # address 00:02:00:00
+        real_path = os.path.realpath(sys_block_path)
+
+        # pull out a segment such as 0000:02:00.0 and trim it to 00:02:00
+        pci_address = real_path.split('/')[5][2:-2]
+
+        devices = self._list_lsi_devices()
+
+        matching_devices = [device for device in devices if
+                            device['pci_address'] == pci_address]
+
+        if len(matching_devices) == 0:
+            # TODO(JayF): Use a more approprate error once we're using new
+            # HardwareManager API in production
+            raise errors.BlockDeviceEraseError(('Unable to locate an LSI '
+                'card with a PCI Address matching {0} for block device '
+                '{1}').format(pci_address, block_device.name))
+
+        if len(matching_devices) > 1:
+            # TODO(JayF): Use a more appropriate error once we're using new
+            # HardwareManager API in production
+            raise errors.BlockDeviceEraseError(('Found multiple LSI '
+                'cards with a PCI Address matching {0} for block device '
+                '{1}').format(pci_address, block_device.name))
+
+        return matching_devices[0]
+
+    def _is_warpdrive(self, block_device):
+        if block_device.model == LSI_MODEL:
+            return True
+
+    def _get_smartctl_attributes(self, block_device):
+        smartout = utils.execute('smartctl', '--attributes', block_device.name)
+        header = None
+        it = iter(smartout.split('\n'))
+        for line in it:
+            # note(JayF): skip forward until we get to the header and pull
+            # it out
+            if line.strip().startswith('ID#'):
+                header = line.strip().split()
+                break
+
+        attributes = {}
+        # note(JayF): All lines at this point contain metrics or are blank.
+        for line in it:
+            line = line.strip()
+            if not line:
+                continue
+            linelist = line.split()
+            # note(JayF): match up headers to values to generate a dict
+            key = linelist[0] + '-' + linelist[1]
+            value = dict(zip(header[2:], linelist[2:]))
+            attributes[key] = value
+
+        return attributes
+
+    def _get_warpdrive_attributes(self, block_device):
+        device = self._get_warpdrive_card(block_device)
+        result = utils.execute(DDOEMCLI, '-c', device['id'], '-health')
+        attributes = {}
+        attrkey = None
+        # note(JayF): What we really get here is SMART data for the 4 SSDs
+        # behind the Warpdrive card. Split them up to parse separately.
+        for idx, lines in enumerate(result.split('SSD Drive SMART')):
+            # note(JayF): The first entry is headers, throw it away
+            if idx == 0:
+                continue
+            it = iter(lines.split('\n'))
+            for line in it:
+                line = line.strip()
+                if not line:
+                    continue
+                if line.startswith('Data Slot #'):
+                    # note(JayF): Get the drive number and serial. The full
+                    # line is actually "SSD Drive SMART Data Slot #" but by
+                    # splitting on it above we lose the first three words.
+                    drivenum = line.split()[3][0]
+                    driveserial = line.split()[7]
+                    attrkey = drivenum + '_' + driveserial
+                    attributes[attrkey] = {}
+                # note(JayF): Once we know what drive this is, skip past the
+                # current metrics (which are only for a power cycle), to put
+                # the iterator in the right place for starting to grab k:v
+                # pairs below
+                if line.startswith('-------------- Cumulative'):
+                    break
+
+            for line in it:
+                line = line.strip()
+                # note(JayF): It doesn't make sense to store time in graphite
+                if not line or line.endswith('(Hours:Minutes:Seconds)'):
+                    continue
+                # note(JayF): This is the first line of the footer. If we get
+                # here, we're done parsing.
+                if line.startswith('Warranty Remaining'):
+                    break
+                # note(JayF): Some of the metrics have units or notes in
+                # parens, we look for these and adjust our rsplit accordingly
+                if line.endswith('(degree C)'):
+                    key = line.rsplit(None, 3)[0].replace(" ", "")
+                    value = line.rsplit(None, 3)[1]
+                elif (line.endswith('(Gigabytes)')
+                       or line.endswith('(%)')):
+                    key = line.rsplit(None, 2)[0].replace(" ", "")
+                    value = line.rsplit(None, 2)[1]
+                else:
+                    key = line.rsplit(None, 1)[0].replace(" ", "")
+                    value = line.rsplit(None, 1)[1]
+                # note(JayF): Ensure all characters are safe for graphite
+                key = re.sub(r'[\(\)/\\]', '_', key)
+                attributes[attrkey][key] = re.sub(r'[\(\)/\\]', '_', value)
+
+        return attributes
+
+    def _send_gauges(self, prefix, metrics_to_send):
+        """Batch-send gauges to MetricsLogger.
+
+        :param prefix: The prefix given to MetricLogger
+        :param metrics: Dict in the format {'key': 'value'} where key is the
+                        metric name and value is the metric.
+        """
+        logger = metrics.getLogger(prefix)
+        for name, gauge in six.iteritems(metrics_to_send):
+            logger.gauge(name, gauge)
+
+    def get_disk_metrics(self):
+        smart_data_columns = ['VALUE', 'WORST', 'RAW_VALUE']
+        block_devices = self.list_block_devices()
+        for block_device in block_devices:
+            if self._is_warpdrive(block_device):
+                wdmetrics = self._get_warpdrive_attributes(block_device)
+                prefix = 'smartdata_{0}_{1}'.format(
+                        os.path.basename(block_device.name),
+                        block_device.model.replace(" ", ""))
+                metrics_to_send = {}
+                for disk, stats in six.iteritems(wdmetrics):
+                    for key, value in six.iteritems(stats):
+                        metrickey = disk + '.' + key
+                        metrics_to_send[metrickey] = value
+
+            else:
+                disk_metrics = self._get_smartctl_attributes(block_device)
+                prefix = 'smartdata_{0}_{1}'.format(
+                        os.path.basename(block_device.name),
+                        block_device.model.replace(" ", ""))
+                metrics_to_send = {}
+                for k, v in six.iteritems(disk_metrics):
+                    if v['RAW_VALUE'] == '0':
+                        continue
+                    for heading in smart_data_columns:
+                        key = k + '.' + heading
+                        metrics_to_send[key] = v[heading]
+
+            self._send_gauges(prefix, metrics_to_send)
+
     def _erase_lsi_warpdrive(self, block_device):
-        if block_device.model != LSI_MODEL:
+        if not self._is_warpdrive(block_device):
             return False
 
         # NOTE(JayF): Start timing here, so any devices short circuited
         # don't produce invalidly-short metrics.
         with metrics.instrument_context(__name__, 'erase_lsi_warpdrive'):
-            device_name = os.path.basename(block_device.name)
-            sys_block_path = '{0}/block/{1}'.format(self.sys_path, device_name)
-
-            # NOTE(russell_h): Trying to map a block device name to an LSI card
-            # gets a little weird. It seems like if we follow the
-            # /sys/block/<name> symlink, we'll find something that looks like:
-            #
-            # /sys/devices/pci0000:00/0000:00:02.0/0000:02:00.0/host3/
-            #      target3:1:0/3:1:0:0/block/sdb
-            #
-            # This seems to correspond to the card that ddcli reports has PCI
-            # address 00:02:00:00
-            real_path = os.path.realpath(sys_block_path)
-
-            # pull out a segment such as 0000:02:00.0 and trim it to 00:02:00
-            pci_address = real_path.split('/')[5][2:-2]
-
-            devices = self._list_lsi_devices()
-
-            matching_devices = [device for device in devices if
-                                device['pci_address'] == pci_address]
-
-            if len(matching_devices) == 0:
-                raise errors.BlockDeviceEraseError(('Unable to locate an LSI '
-                    'card with a PCI Address matching {0} for block device '
-                    '{1}').format(pci_address, block_device.name))
-
-            if len(matching_devices) > 1:
-                raise errors.BlockDeviceEraseError(('Found multiple LSI '
-                    'cards with a PCI Address matching {0} for block device '
-                    '{1}').format(pci_address, block_device.name))
-
-            device = matching_devices[0]
+            device = self._get_warpdrive_card(block_device)
             result = utils.execute(DDOEMCLI, '-c', device['id'], '-format',
                     '-op', '-level', 'nom', '-s')
             if 'WarpDrive format successfully completed.' not in result[0]:

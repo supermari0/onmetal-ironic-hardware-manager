@@ -34,8 +34,283 @@ def _read_file(test_data):
     with open(filename, 'r') as data:
         return data.read()
 
+
 DDOEMCLI_FORMAT_OUT = _read_file('data/ddoemcli_format_out.txt')
 DDOEMCLI_LISTALL_OUT = _read_file('data/ddoemcli_listall_out.txt')
+DDOEMCLI_HEALTH_OUT = _read_file('data/ddoemcli_health_out.txt')
+SMARTCTL_ATTRIBUTES_OUT = _read_file('data/smartctl_attributes_out.txt')
+
+WARPDRIVE_ATTRIBUTES = {
+    '4_FL00AV2L': {
+        'DevicePowerCycleCount': '49',
+        'EraseFailCount1': '0',
+        'GigabytesErased': '329',
+        'I_OErrorDetectionCodeRate': '0',
+        'MaximumLifetimeTemperature': '82',
+        'Power-OnHours': '957.6',
+        'ProgramFailCount': '0',
+        'ReservedBlocksRemaining': '100',
+        'Reserved_over-provisioned_Blocks': '32128',
+        'RetiredBlockCount': '0',
+        'SSDLifeLeft_PECycles_': '100',
+        'TotalReadsToHost': '0',
+        'TotalWritesFromHost': '7',
+        'TrimCount': '0',
+        'UncorrectableRAISEErrors': '0',
+        'UnexpectedPowerLossCount': '56',
+        'WriteAmplification': '1.29'
+    },
+    '5_FL00AV3L': {
+        'DevicePowerCycleCount': '47',
+        'EraseFailCount1': '0',
+        'GigabytesErased': '289',
+        'I_OErrorDetectionCodeRate': '0',
+        'MaximumLifetimeTemperature': '82',
+        'Power-OnHours': '957.5',
+        'ProgramFailCount': '0',
+        'ReservedBlocksRemaining': '100',
+        'Reserved_over-provisioned_Blocks': '31232',
+        'RetiredBlockCount': '0',
+        'SSDLifeLeft_PECycles_': '100',
+        'TotalReadsToHost': '0',
+        'TotalWritesFromHost': '7',
+        'TrimCount': '0',
+        'UncorrectableRAISEErrors': '0',
+        'UnexpectedPowerLossCount': '52',
+        'WriteAmplification': '1.29'
+     },
+     '6_FL00AVPL': {
+         'DevicePowerCycleCount': '45',
+         'EraseFailCount1': '0',
+         'GigabytesErased': '262',
+         'I_OErrorDetectionCodeRate': '0',
+         'MaximumLifetimeTemperature': '79',
+         'Power-OnHours': '957.5',
+         'ProgramFailCount': '0',
+         'ReservedBlocksRemaining': '100',
+         'Reserved_over-provisioned_Blocks': '30848',
+         'RetiredBlockCount': '0',
+         'SSDLifeLeft_PECycles_': '100',
+         'TotalReadsToHost': '0',
+         'TotalWritesFromHost': '7',
+         'TrimCount': '0',
+         'UncorrectableRAISEErrors': '0',
+         'UnexpectedPowerLossCount': '48',
+         'WriteAmplification': '1.29'
+     },
+     '7_FL00ATTV': {
+         'DevicePowerCycleCount': '74',
+         'EraseFailCount1': '0',
+         'GigabytesErased': '9125',
+         'I_OErrorDetectionCodeRate': '0',
+         'MaximumLifetimeTemperature': '79',
+         'Power-OnHours': '975.8',
+         'ProgramFailCount': '0',
+         'ReservedBlocksRemaining': '100',
+         'Reserved_over-provisioned_Blocks': '31488',
+         'RetiredBlockCount': '0',
+         'SSDLifeLeft_PECycles_': '100',
+         'TotalReadsToHost': '1228',
+         'TotalWritesFromHost': '7936',
+         'TrimCount': '0',
+         'UncorrectableRAISEErrors': '0',
+         'UnexpectedPowerLossCount': '89',
+         'WriteAmplification': '1.02'
+    }
+}
+
+SMARTCTL_ATTRIBUTES = {
+    '1-Raw_Read_Error_Rate': {
+        'FLAG': '0x000a',
+        'RAW_VALUE': '0',
+        'THRESH': '000',
+        'TYPE': 'Old_age',
+        'UPDATED': 'Always',
+        'VALUE': '100',
+        'WHEN_FAILED': '-',
+        'WORST': '100'
+    },
+    '10-Unknown_SSD_Attribute': {
+        'FLAG': '0x0013',
+        'RAW_VALUE': '0',
+        'THRESH': '050',
+        'TYPE': 'Pre-fail',
+        'UPDATED': 'Always',
+        'VALUE': '100',
+        'WHEN_FAILED': '-',
+        'WORST': '100'
+    },
+    '12-Power_Cycle_Count': {
+        'FLAG': '0x0012',
+        'RAW_VALUE': '68',
+        'THRESH': '000',
+        'TYPE': 'Old_age',
+        'UPDATED': 'Always',
+        'VALUE': '100',
+        'WHEN_FAILED': '-',
+        'WORST': '100'
+    },
+    '167-Unknown_Attribute': {
+        'FLAG': '0x0022',
+        'RAW_VALUE': '0',
+        'THRESH': '000',
+        'TYPE': 'Old_age',
+        'UPDATED': 'Always',
+        'VALUE': '100',
+        'WHEN_FAILED': '-',
+        'WORST': '100'
+    },
+    '168-Unknown_Attribute': {
+        'FLAG': '0x0012',
+        'RAW_VALUE': '0',
+        'THRESH': '000',
+        'TYPE': 'Old_age',
+        'UPDATED': 'Always',
+        'VALUE': '100',
+        'WHEN_FAILED': '-',
+        'WORST': '100'
+    },
+    '169-Unknown_Attribute': {
+        'FLAG': '0x0013',
+        'RAW_VALUE': '262144',
+        'THRESH': '010',
+        'TYPE': 'Pre-fail',
+        'UPDATED': 'Always',
+        'VALUE': '100',
+        'WHEN_FAILED': '-',
+        'WORST': '100'
+    },
+    '170-Unknown_Attribute': {
+        'FLAG': '0x0013',
+        'RAW_VALUE': '0',
+        'THRESH': '010',
+        'TYPE': 'Pre-fail',
+        'UPDATED': 'Always',
+        'VALUE': '100',
+        'WHEN_FAILED': '-',
+        'WORST': '100'
+    },
+    '173-Unknown_Attribute': {
+        'FLAG': '0x0012',
+        'RAW_VALUE': '262146',
+        'THRESH': '000',
+        'TYPE': 'Old_age',
+        'UPDATED': 'Always',
+        'VALUE': '199',
+        'WHEN_FAILED': '-',
+        'WORST': '199'
+    },
+    '175-Program_Fail_Count_Chip': {
+        'FLAG': '0x0013',
+        'RAW_VALUE': '0',
+        'THRESH': '010',
+        'TYPE': 'Pre-fail',
+        'UPDATED': 'Always',
+        'VALUE': '100',
+        'WHEN_FAILED': '-',
+        'WORST': '100'
+    },
+    '192-Power-Off_Retract_Count': {
+        'FLAG': '0x0012',
+        'RAW_VALUE': '0',
+        'THRESH': '000',
+        'TYPE': 'Old_age',
+        'UPDATED': 'Always',
+        'VALUE': '100',
+        'WHEN_FAILED': '-',
+        'WORST': '100'
+    },
+    '194-Temperature_Celsius': {
+        'FLAG': '0x0023',
+        'RAW_VALUE': '40',
+        'THRESH': '030',
+        'TYPE': 'Pre-fail',
+        'UPDATED': 'Always',
+        'VALUE': '100',
+        'WHEN_FAILED': '-',
+        'WORST': '100'
+    },
+    '197-Current_Pending_Sector': {
+        'FLAG': '0x0012',
+        'RAW_VALUE': '0',
+        'THRESH': '000',
+        'TYPE': 'Old_age',
+        'UPDATED': 'Always',
+        'VALUE': '100',
+        'WHEN_FAILED': '-',
+        'WORST': '100'
+    },
+    '2-Throughput_Performance': {
+        'FLAG': '0x0005',
+        'RAW_VALUE': '0',
+        'THRESH': '050',
+        'TYPE': 'Pre-fail',
+        'UPDATED': 'Offline',
+        'VALUE': '100',
+        'WHEN_FAILED': '-',
+        'WORST': '100'
+    },
+    '240-Unknown_SSD_Attribute': {
+        'FLAG': '0x0013',
+        'RAW_VALUE': '0',
+        'THRESH': '050',
+        'TYPE': 'Pre-fail',
+        'UPDATED': 'Always',
+        'VALUE': '100',
+        'WHEN_FAILED': '-',
+        'WORST': '100'
+    },
+    '3-Spin_Up_Time': {
+        'FLAG': '0x0007',
+        'RAW_VALUE': '0',
+        'THRESH': '050',
+        'TYPE': 'Pre-fail',
+        'UPDATED': 'Always',
+        'VALUE': '100',
+        'WHEN_FAILED': '-',
+        'WORST': '100'
+    },
+    '5-Reallocated_Sector_Ct': {
+        'FLAG': '0x0013',
+        'RAW_VALUE': '0',
+        'THRESH': '050',
+        'TYPE': 'Pre-fail',
+        'UPDATED': 'Always',
+        'VALUE': '100',
+        'WHEN_FAILED': '-',
+        'WORST': '100'
+    },
+    '7-Unknown_SSD_Attribute': {
+        'FLAG': '0x000b',
+        'RAW_VALUE': '0',
+        'THRESH': '050',
+        'TYPE': 'Pre-fail',
+        'UPDATED': 'Always',
+        'VALUE': '100',
+        'WHEN_FAILED': '-',
+        'WORST': '100'
+    },
+    '8-Unknown_SSD_Attribute': {
+        'FLAG': '0x0005',
+        'RAW_VALUE': '0',
+        'THRESH': '050',
+        'TYPE': 'Pre-fail',
+        'UPDATED': 'Offline',
+        'VALUE': '100',
+        'WHEN_FAILED': '-',
+        'WORST': '100'
+    },
+    '9-Power_On_Hours': {
+        'FLAG': '0x0012',
+        'RAW_VALUE': '1673',
+        'THRESH': '000',
+        'TYPE': 'Old_age',
+        'UPDATED': 'Always',
+        'VALUE': '100',
+        'WHEN_FAILED': '-',
+        'WORST': '100'
+    }
+}
 
 
 class TestOnMetalHardwareManager(test_base.BaseTestCase):
@@ -90,10 +365,9 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
 
         self.hardware.erase_block_device(self.block_device)
 
-        mocked_execute.assert_has_calls([
-            mock.call(onmetal_hardware_manager.DDOEMCLI,
-            '-c', '1', '-format', '-op', '-level', 'nom', '-s')
-        ])
+        mocked_execute.assert_called_once_with(
+                onmetal_hardware_manager.DDOEMCLI,
+                '-c', '1', '-format', '-op', '-level', 'nom', '-s')
 
     @mock.patch.object(os.path, 'realpath')
     @mock.patch.object(utils, 'execute')
@@ -111,7 +385,7 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
                           self.hardware.erase_block_device,
                           self.block_device)
 
-        mocked_execute.assert_has_calls([])
+        self.assertEqual(0, mocked_execute.call_count)
 
     @mock.patch.object(os.path, 'realpath')
     @mock.patch.object(utils, 'execute')
@@ -130,7 +404,7 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
                           self.hardware.erase_block_device,
                           self.block_device)
 
-        mocked_execute.assert_has_calls([])
+        self.assertEqual(0, mocked_execute.call_count)
 
     @mock.patch.object(os.path, 'realpath')
     @mock.patch.object(utils, 'execute')
@@ -153,10 +427,9 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
                           self.hardware.erase_block_device,
                           self.block_device)
 
-        mocked_execute.assert_has_calls([
-            mock.call(onmetal_hardware_manager.DDOEMCLI,
-                '-c', '1', '-format', '-op', '-level', 'nom', '-s'),
-        ])
+        mocked_execute.assert_called_once_with(
+            onmetal_hardware_manager.DDOEMCLI,
+            '-c', '1', '-format', '-op', '-level', 'nom', '-s'),
 
     @mock.patch('ironic_python_agent.hardware.GenericHardwareManager'
                 '.erase_block_device')
@@ -167,8 +440,9 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
 
         self.block_device.model = 'NormalSSD'
         self.hardware.erase_block_device(self.block_device)
-        mocked_execute.assert_has_calls([])
-        mocked_generic.assert_has_calls([mock.call(self.block_device)])
+
+        self.assertEqual(0, mocked_execute.call_count)
+        mocked_generic.assert_called_once_with(self.block_device)
 
     @mock.patch.object(utils, 'execute')
     def test_update_warpdrive_firmware_upgrade_both(self, mocked_execute):
@@ -226,7 +500,7 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
         self.hardware._list_lsi_devices = mock.Mock()
         self.hardware._list_lsi_devices.return_value = self.FAKE_DEVICES
         self.hardware.update_warpdrive_firmware({}, [])
-        mocked_execute.assert_has_calls([])
+        self.assertEqual(0, mocked_execute.call_count)
 
     @mock.patch.object(utils, 'execute')
     def test_remove_bootloader(self, mocked_execute):
@@ -234,13 +508,152 @@ class TestOnMetalHardwareManager(test_base.BaseTestCase):
         self.hardware.get_os_install_device.return_value = '/dev/hdz'
         self.hardware.remove_bootloader({}, [])
 
-        mocked_execute.assert_has_calls([mock.call(
+        mocked_execute.assert_called_once_with(
             'dd',
             'if=/dev/zero',
             'of=/dev/hdz',
             'bs=1M',
             'count=1',
-            check_exit_code=[0])])
+            check_exit_code=[0])
+
+    @mock.patch.object(utils, 'execute')
+    def test__get_smartctl_attributes(self, mocked_execute):
+        expected = SMARTCTL_ATTRIBUTES
+
+        mocked_execute.return_value = SMARTCTL_ATTRIBUTES_OUT
+        self.block_device = hardware.BlockDevice('/dev/sda', '32G MLC SATADOM',
+                                                 31016853504, False)
+        actual = self.hardware._get_smartctl_attributes(self.block_device)
+
+        mocked_execute.assert_called_once_with(
+            'smartctl',
+            '--attributes',
+            '/dev/sda')
+
+        self.assertEqual(expected, actual)
+
+    @mock.patch.object(utils, 'execute')
+    def test__get_warpdrive_attributes(self, mocked_execute):
+        expected = WARPDRIVE_ATTRIBUTES
+
+        self.hardware._get_warpdrive_card = mock.Mock()
+        self.hardware._get_warpdrive_card.return_value = {'id': '1'}
+
+        mocked_execute.return_value = DDOEMCLI_HEALTH_OUT
+        actual = self.hardware._get_warpdrive_attributes(self.block_device)
+
+        mocked_execute.assert_called_once_with(
+                onmetal_hardware_manager.DDOEMCLI,
+                '-c', '1', '-health')
+
+        self.assertEqual(expected, actual)
+
+    def test_get_disk_metrics(self):
+        self.hardware._send_gauges = mock.Mock()
+        self.hardware.list_block_devices = mock.Mock()
+        self.hardware.list_block_devices.return_value = [
+                hardware.BlockDevice(
+                    '/dev/sdb', '32G MLC SATADOM', 31016853504, False),
+                self.block_device]
+
+        self.hardware._get_warpdrive_attributes = mock.Mock()
+        self.hardware._get_warpdrive_attributes.return_value = (
+                WARPDRIVE_ATTRIBUTES)
+
+        self.hardware._get_smartctl_attributes = mock.Mock()
+        self.hardware._get_smartctl_attributes.return_value = (
+                SMARTCTL_ATTRIBUTES)
+
+        self.hardware.get_disk_metrics()
+
+        self.hardware._send_gauges.assert_has_calls([
+            mock.call('smartdata_sdb_32GMLCSATADOM', {
+                '9-Power_On_Hours.VALUE': '100',
+                '9-Power_On_Hours.WORST': '100',
+                '9-Power_On_Hours.RAW_VALUE': '1673',
+                '12-Power_Cycle_Count.VALUE': '100',
+                '12-Power_Cycle_Count.WORST': '100',
+                '12-Power_Cycle_Count.RAW_VALUE': '68',
+                '169-Unknown_Attribute.VALUE': '100',
+                '169-Unknown_Attribute.WORST': '100',
+                '169-Unknown_Attribute.RAW_VALUE': '262144',
+                '173-Unknown_Attribute.VALUE': '199',
+                '173-Unknown_Attribute.WORST': '199',
+                '173-Unknown_Attribute.RAW_VALUE': '262146',
+                '194-Temperature_Celsius.VALUE': '100',
+                '194-Temperature_Celsius.WORST': '100',
+                '194-Temperature_Celsius.RAW_VALUE': '40',
+            }),
+            mock.call('smartdata_sda_NWD-BLP4-1600', {
+                '6_FL00AVPL.Power-OnHours': '957.5',
+                '5_FL00AV3L.UncorrectableRAISEErrors': '0',
+                '4_FL00AV2L.TotalWritesFromHost': '7',
+                '7_FL00ATTV.EraseFailCount1': '0',
+                '5_FL00AV3L.MaximumLifetimeTemperature': '82',
+                '4_FL00AV2L.RetiredBlockCount': '0',
+                '5_FL00AV3L.ProgramFailCount': '0',
+                '5_FL00AV3L.TotalWritesFromHost': '7',
+                '6_FL00AVPL.MaximumLifetimeTemperature': '79',
+                '6_FL00AVPL.WriteAmplification': '1.29',
+                '4_FL00AV2L.GigabytesErased': '329',
+                '4_FL00AV2L.MaximumLifetimeTemperature': '82',
+                '7_FL00ATTV.ReservedBlocksRemaining': '100',
+                '7_FL00ATTV.I_OErrorDetectionCodeRate': '0',
+                '6_FL00AVPL.DevicePowerCycleCount': '45',
+                '7_FL00ATTV.TotalWritesFromHost': '7936',
+                '5_FL00AV3L.Power-OnHours': '957.5',
+                '7_FL00ATTV.Power-OnHours': '975.8',
+                '7_FL00ATTV.GigabytesErased': '9125',
+                '4_FL00AV2L.ProgramFailCount': '0',
+                '6_FL00AVPL.EraseFailCount1': '0',
+                '6_FL00AVPL.TotalWritesFromHost': '7',
+                '5_FL00AV3L.I_OErrorDetectionCodeRate': '0',
+                '7_FL00ATTV.MaximumLifetimeTemperature': '79',
+                '6_FL00AVPL.I_OErrorDetectionCodeRate': '0',
+                '4_FL00AV2L.TrimCount': '0',
+                '6_FL00AVPL.TrimCount': '0',
+                '4_FL00AV2L.UnexpectedPowerLossCount': '56',
+                '4_FL00AV2L.Power-OnHours': '957.6',
+                '6_FL00AVPL.RetiredBlockCount': '0',
+                '7_FL00ATTV.TrimCount': '0',
+                '5_FL00AV3L.GigabytesErased': '289',
+                '6_FL00AVPL.TotalReadsToHost': '0',
+                '4_FL00AV2L.ReservedBlocksRemaining': '100',
+                '7_FL00ATTV.UncorrectableRAISEErrors': '0',
+                '7_FL00ATTV.RetiredBlockCount': '0',
+                '7_FL00ATTV.Reserved_over-provisioned_Blocks': '31488',
+                '6_FL00AVPL.ProgramFailCount': '0',
+                '5_FL00AV3L.SSDLifeLeft_PECycles_': '100',
+                '7_FL00ATTV.WriteAmplification': '1.02',
+                '6_FL00AVPL.ReservedBlocksRemaining': '100',
+                '5_FL00AV3L.TotalReadsToHost': '0',
+                '4_FL00AV2L.WriteAmplification': '1.29',
+                '6_FL00AVPL.Reserved_over-provisioned_Blocks': '30848',
+                '6_FL00AVPL.UnexpectedPowerLossCount': '48',
+                '5_FL00AV3L.WriteAmplification': '1.29',
+                '6_FL00AVPL.UncorrectableRAISEErrors': '0',
+                '5_FL00AV3L.Reserved_over-provisioned_Blocks': '31232',
+                '5_FL00AV3L.DevicePowerCycleCount': '47',
+                '7_FL00ATTV.DevicePowerCycleCount': '74',
+                '6_FL00AVPL.SSDLifeLeft_PECycles_': '100',
+                '4_FL00AV2L.Reserved_over-provisioned_Blocks': '32128',
+                '5_FL00AV3L.TrimCount': '0',
+                '5_FL00AV3L.RetiredBlockCount': '0',
+                '7_FL00ATTV.UnexpectedPowerLossCount': '89',
+                '4_FL00AV2L.I_OErrorDetectionCodeRate': '0',
+                '4_FL00AV2L.UncorrectableRAISEErrors': '0',
+                '5_FL00AV3L.EraseFailCount1': '0',
+                '7_FL00ATTV.ProgramFailCount': '0',
+                '6_FL00AVPL.GigabytesErased': '262',
+                '4_FL00AV2L.EraseFailCount1': '0',
+                '4_FL00AV2L.SSDLifeLeft_PECycles_': '100',
+                '5_FL00AV3L.ReservedBlocksRemaining': '100',
+                '7_FL00ATTV.SSDLifeLeft_PECycles_': '100',
+                '4_FL00AV2L.DevicePowerCycleCount': '49',
+                '4_FL00AV2L.TotalReadsToHost': '0',
+                '7_FL00ATTV.TotalReadsToHost': '1228',
+                '5_FL00AV3L.UnexpectedPowerLossCount': '52'})
+            ])
 
     def test_verify_blockdevice_count_io_pass(self):
         self.hardware._get_flavor_from_node = mock.Mock()
