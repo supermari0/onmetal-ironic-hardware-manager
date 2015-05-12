@@ -79,62 +79,62 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
             {
                 'step': 'remove_bootloader',
                 'interface': 'deploy',
-                'priority': 10,
+                'priority': 100,
                 'reboot_requested': False,
             },
             {
                 'step': 'upgrade_bios',
                 'interface': 'deploy',
-                'priority': 9,
+                'priority': 90,
                 'reboot_requested': True,
             },
             {
                 'step': 'decom_bios_settings',
                 'interface': 'deploy',
-                'priority': 8,
+                'priority': 80,
                 'reboot_requested': True,
             },
             {
                 'step': 'update_warpdrive_firmware',
                 'interface': 'deploy',
-                'priority': 7,
+                'priority': 70,
                 'reboot_requested': False,
             },
             # This step is a no-op for now.
             {
                 'step': 'update_intel_nic_firmware',
                 'interface': 'deploy',
-                'priority': 6,
+                'priority': 60,
                 'reboot_requested': True,
             },
             {
                 'step': 'erase_devices',
                 'interface': 'deploy',
-                'priority': 5,
+                'priority': 50,
                 'reboot_requested': False,
             },
             {
                 'step': 'get_disk_metrics',
                 'interface': 'deploy',
-                'priority': 4,
+                'priority': 40,
                 'reboot_requested': False
             },
             {
                 'step': 'customer_bios_settings',
                 'interface': 'deploy',
-                'priority': 3,
+                'priority': 30,
                 'reboot_requested': True,
             },
             {
                 'step': 'verify_ports',
                 'interface': 'deploy',
-                'priority': 2,
+                'priority': 20,
                 'reboot_requested': False
             },
             {
                 'step': 'verify_hardware',
                 'interface': 'deploy',
-                'priority': 1,
+                'priority': 10,
                 'reboot_requested': False
             }
         ]
