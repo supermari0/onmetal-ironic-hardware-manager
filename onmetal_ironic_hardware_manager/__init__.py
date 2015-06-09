@@ -134,7 +134,7 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
             {
                 'step': 'verify_hardware',
                 'interface': 'deploy',
-                'priority': 10,
+                'priority': 0,
                 'reboot_requested': False
             }
         ]
