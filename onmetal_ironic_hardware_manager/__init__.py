@@ -61,7 +61,7 @@ class OnMetalHardwareManager(hardware.GenericHardwareManager):
 
         super(OnMetalHardwareManager, self).erase_block_device(block_device)
 
-    def get_clean_steps(self):
+    def get_clean_steps(self, node, ports):
         """Get a list of clean steps with priority.
 
         Returns a list of dicts of the following form:
